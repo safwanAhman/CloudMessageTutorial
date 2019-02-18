@@ -97,9 +97,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
-
-
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
                     @Override
@@ -122,8 +119,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         ref = FirebaseDatabase.getInstance().getReference("My Location");
         geoFire = new GeoFire(ref);
 
-       // locationNames.setPlaces("Mc Donald", mDefaultLocation, this);
-
         setUpLocation();
     }
 
@@ -140,16 +135,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         mMap.setOnMarkerClickListener(this);
-
 
         final Intent mIntent = getIntent();
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter("IntentKey"));
 
         checkGeoQuery(mMap);
-
     }
 
     @Override
@@ -403,7 +395,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 sendNotification(msgTittle, msgBody);
 
             }
-            Log.d("ARIANA GRANDE", msgBody);
+            Log.d(TAG, msgBody);
         }
     };
 
@@ -447,7 +439,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             public void onKeyMoved(String key, GeoLocation location) {
                 Log.d("MOVED", String.format(" %s moved within the dangerous area [%f/%f]" ,key,location.latitude,location.longitude));
                 isInRadius = false;
-                //pushing all files
+
 
             }
 
