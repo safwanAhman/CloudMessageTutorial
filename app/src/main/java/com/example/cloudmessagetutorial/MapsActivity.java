@@ -446,7 +446,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             @Override
             public void onKeyMoved(String key, GeoLocation location) {
                 Log.d("MOVED", String.format(" %s moved within the dangerous area [%f/%f]" ,key,location.latitude,location.longitude));
-                isInRadius = true;
+                isInRadius = false;
 
             }
 
