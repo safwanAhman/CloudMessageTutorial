@@ -86,7 +86,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private final String TAG = "VB LOG TEXT";
     GeoFire geoFire;
 
-   //LocationNames locationNames;
+   LocationNames locationNames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,9 +137,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         mMap = googleMap;
         mMap.setOnMarkerClickListener(this);
 
+        locationNames = new LocationNames();
+
         final Intent mIntent = getIntent();
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter("IntentKey"));
+
+        locationNames.setPlaces("MC DONALD", mDefaultLocation, this);
 
         checkGeoQuery(mMap);
     }
@@ -251,7 +255,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             displayLocation();
 
         }
-
     }
 
     private void createLocationRequest() {

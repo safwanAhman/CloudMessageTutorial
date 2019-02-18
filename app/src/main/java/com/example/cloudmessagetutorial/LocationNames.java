@@ -46,12 +46,12 @@ public class LocationNames {
             for(int count = 0; count < listPlaces.size(); count++){
                 if(listPlaces.get(count).containsKey(name)){
                     Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
-                }else{
-                    places.put(name,latLng);
-                    listPlaces.add(places);
                 }
             }
 
+        }else{
+            places.put(name,latLng);
+            listPlaces.add(places);
         }
 
     }
