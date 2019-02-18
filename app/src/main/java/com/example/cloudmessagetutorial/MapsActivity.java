@@ -97,6 +97,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        //initialized location names here
+        locationNames = new LocationNames();
+
         FirebaseInstanceId.getInstance().getInstanceId()
                 .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
                     @Override
@@ -136,8 +139,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setOnMarkerClickListener(this);
-
-        locationNames = new LocationNames();
 
         final Intent mIntent = getIntent();
         LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -405,6 +406,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     private void checkGeoQuery(GoogleMap googleMap){
 
+
+        //should all be in location names class
         myMarker = googleMap.addMarker(new MarkerOptions()
                 .position(mDefaultLocation)
                 .title("MCD")
@@ -423,6 +426,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         //Add Geoquery
         //convert meter in kilometer
         //example 1000 meter = 1.0fm
+        //check against locationNames instead of hardcoding it
         GeoQuery geoQuery =
                 geoFire.queryAtLocation(new GeoLocation(danger_area.latitude,danger_area.longitude), 7.6f );
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {

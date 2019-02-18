@@ -51,7 +51,7 @@ public class LocationNames {
 
         }else{
             places.put(name,latLng);
-            listPlaces.add(places);
+            listPlaces.add(places);       //actually might not need to use list
         }
 
     }
@@ -62,10 +62,11 @@ public class LocationNames {
 
         defaultLatLng = new LatLng(0,0);
 
-        if(listPlaces.size() > 0){
-            for(int count=0; count <listPlaces.size(); count++){
-                if (listPlaces.get(count).containsKey(name))
-                    defaultLatLng = places.get(name);
+        if(places.size() > 0){
+            for(Map.Entry<String, LatLng> entry: places.entrySet()){
+                if(name.equals(entry.getKey())){
+                    defaultLatLng = entry.getValue();
+                }
             }
         }else
             return defaultLatLng;
