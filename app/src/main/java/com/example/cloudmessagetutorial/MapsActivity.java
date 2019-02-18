@@ -406,9 +406,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     private void checkGeoQuery(GoogleMap googleMap){
 
-
+        //can still work well without a marker variable? (Should double check)
         //should all be in location names class
-        myMarker = googleMap.addMarker(new MarkerOptions()
+        googleMap.addMarker(new MarkerOptions()
                 .position(mDefaultLocation)
                 .title("MCD")
                 .snippet("This is my spot!")

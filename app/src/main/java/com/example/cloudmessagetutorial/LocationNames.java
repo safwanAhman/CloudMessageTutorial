@@ -1,9 +1,15 @@
 package com.example.cloudmessagetutorial;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +34,7 @@ public class LocationNames {
     private List<Map> listPlaces = new ArrayList<>();
     private LatLng defaultLatLng;
     private double radius;
+    private Marker myMarker;
 
     private String defaultPlace;
 
@@ -56,7 +63,14 @@ public class LocationNames {
 
     }
 
-    //search array list of the name and return the latlng
+
+    //REMINDER: radius is in meter
+    public void setRadius(double r){
+        radius = r;
+    }
+
+
+    //search list of the name and return the latlng
     //not sure if it works, have to check
     public LatLng getLatLng(String name){
 
@@ -68,25 +82,40 @@ public class LocationNames {
                     defaultLatLng = entry.getValue();
                 }
             }
-        }else
-            return defaultLatLng;
-
+        }
         return  defaultLatLng;
     }
 
-    /**public String getPlace(LatLng latLng){
+    //search list of the latlng and return the name
+    //not sure if it works, have to check
+    public String getPlace(LatLng latLng){
 
         defaultPlace = "Nowehere";
 
-        if(listPlaces.size() > 0){
-            for(int count = 0; count< listPlaces.size(); count++){
-                if(listPlaces.get(count).containsValue(latLng))
-                    defaultPlace = listPlaces.get(count).;
-
+        if(places.size() > 0){
+            for(Map.Entry<String, LatLng> entry: places.entrySet()){
+                if(latLng.equals(entry.getValue())){
+                    defaultPlace = entry.getKey();
+                }
             }
-
         }
+        return  defaultPlace;
+    }
 
-    }**/
+    public void setMarker(GoogleMap googleMap, LatLng location, String name, String text){
+        googleMap.addMarker(new MarkerOptions()
+                .position(location)
+                .title(name)
+                .snippet(text)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+
+        googleMap.addCircle(new CircleOptions()
+                .center(location)
+                .radius(radius)//is in meter
+                .strokeColor(Color.BLUE)
+                .fillColor(0x222000FF)
+                .strokeWidth(5.0f));
+    }
 
 }
