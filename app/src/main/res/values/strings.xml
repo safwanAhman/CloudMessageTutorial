@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">CloudMessageTutorial</string>
+    <string name="default_notification_channel_id">0</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="msg_token_fmt">TOKEN ASS BITCH %s</string>
+
+</resources>

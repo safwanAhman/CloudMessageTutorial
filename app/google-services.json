@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "911384943720",
+    "firebase_url": "https://cloudmessagetutorial.firebaseio.com",
+    "project_id": "cloudmessagetutorial",
+    "storage_bucket": "cloudmessagetutorial.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911384943720:android:55d78dc9930568f9",
+        "android_client_info": {
+          "package_name": "com.example.cloudmessagetutorial"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "911384943720-acs240ue6jvs14t783mu5m5phnk8156p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cloudmessagetutorial",
+            "certificate_hash": "dda148c88f4ec5c2dfeb5993ec55561a0a717b88"
+          }
+        },
+        {
+          "client_id": "911384943720-v0adpen3djv4b3699mqm7q4r5kk8nob4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwSRuQi6rKRaI44GaG07ZIO8lNEs0LMkk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "911384943720-v0adpen3djv4b3699mqm7q4r5kk8nob4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
