@@ -33,11 +33,10 @@ public class LocationNames {
     private Map<String, LatLng> places = new HashMap<>();
     private List<Map> listPlaces = new ArrayList<>();
     private LatLng defaultLatLng;
-    private double radius;
+    private double radius = 50; //50 is the default set radius
     private Marker myMarker;
 
     private String defaultPlace;
-
 
     public LocationNames(){}
 
@@ -60,7 +59,6 @@ public class LocationNames {
             places.put(name,latLng);
             listPlaces.add(places);       //actually might not need to use list
         }
-
     }
 
 
@@ -72,6 +70,9 @@ public class LocationNames {
 
     //search list of the name and return the latlng
     //not sure if it works, have to check
+    //next step is to connect to Firebase Database
+    //should retrieve stuff from Firebase database as well as able to add to it too
+
     public LatLng getLatLng(String name){
 
         defaultLatLng = new LatLng(0,0);
@@ -109,7 +110,6 @@ public class LocationNames {
                 .snippet(text)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
-
         googleMap.addCircle(new CircleOptions()
                 .center(location)
                 .radius(radius)//is in meter
@@ -118,4 +118,14 @@ public class LocationNames {
                 .strokeWidth(5.0f));
     }
 
+    public int getSize(){
+        if(places == null){
+            return 0;
+        }else
+            return places.size();
+    }
+
+    public Map<String, LatLng> getPlaces(){
+        return places;
+    }
 }

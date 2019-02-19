@@ -52,6 +52,8 @@ import com.google.firebase.iid.InstanceIdResult;
 
 import com.example.cloudmessagetutorial.LocationNames;
 
+import java.util.Map;
+
 
 public class MapsActivity extends FragmentActivity implements  OnMapReadyCallback
         , GoogleApiClient.ConnectionCallbacks
@@ -65,6 +67,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private static final int PLAY_SERVCE_RES_REQUEST = 1995;
 
     private LatLng mDefaultLocation = new LatLng(4.965173, 114.951696);
+    private LatLng  here = new LatLng(4.971249, 114.952393);
 
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
@@ -404,31 +407,35 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     };
 
 
+    //might need to add more parameter to fit in the set marker
     private void checkGeoQuery(GoogleMap googleMap){
 
-        //can still work well without a marker variable? (Should double check);
-        //should all be in location names class
-        googleMap.addMarker(new MarkerOptions()
-                .position(mDefaultLocation)
-                .title("MCD")
-                .snippet("This is my spot!")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+        LatLng crossfit = new LatLng(4.930940, 114.840726);
+
+        locationNames.setRadius(700);
+
+        locationNames.setMarker(googleMap,mDefaultLocation,"MCD", "this is my spot");
+        locationNames.setMarker(googleMap, crossfit, "673 Jerudong", "Gym");
 
 
-        LatLng danger_area = new LatLng(4.965173, 114.951696);
-        googleMap.addCircle(new CircleOptions()
-                .center(danger_area)
-                .radius(700)//meter
-                .strokeColor(Color.BLUE)
-                .fillColor(0x222000FF)
-                .strokeWidth(5.0f));
 
         //Add Geoquery
         //convert meter in kilometer
         //example 1000 meter = 1.0fm
-        //check against locationNames instead of hardcoding it
-        GeoQuery geoQuery =
-                geoFire.queryAtLocation(new GeoLocation(danger_area.latitude,danger_area.longitude), 7.6f );
+        //check against locationNames instead of hardcoding it by looping through all the given names and latlng
+
+        GeoQuery geoQuery
+                = geoFire.queryAtLocation(new GeoLocation (here.latitude,here.longitude), 7.6f);
+
+        if(locationNames.getSize() > 0 ) {
+            for(Map.Entry<String,LatLng> entry: locationNames.getPlaces().entrySet()) {
+                geoQuery =
+                        geoFire.queryAtLocation(new GeoLocation(locationNames.getLatLng("MCD").latitude, locationNames.getLatLng("MCD").longitude), 7.6f);
+            }
+        }else
+            geoQuery =
+                    geoFire.queryAtLocation(new GeoLocation(locationNames.getLatLng("673 Jerudong").latitude, locationNames.getLatLng("673 Jerudong").longitude), 7.6f);
+
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
