@@ -31,7 +31,7 @@ import java.util.Map;
 public class LocationNames {
 
     private Map<String, LatLng> places = new HashMap<>();
-    private List<Map> listPlaces = new ArrayList<>();
+    private List<Places> placesList = new ArrayList<>();
     private LatLng defaultLatLng;
     private double radius = 50; //50 is the default set radius
     private Marker myMarker;
@@ -43,22 +43,30 @@ public class LocationNames {
     //add to the list of places
     //error check with same name
     //if have the same name then make it not work
-    public void setPlaces(String name, LatLng latLng, Context context){
+    public void setPlaces(String name, LatLng latLng, double radius, Context context){
+
+
+        if(placesList.size() >0){
+            for(int count = 0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
+                }
+            }
+        }else
+            placesList.add(new Places(name, latLng,radius));
+
 
         //checks in the list of places already have the same name
         //if they do, do not add it into the list
         //else add to the list
-        if(listPlaces.size() > 0){
-            for(int count = 0; count < listPlaces.size(); count++){
-                if(listPlaces.get(count).containsKey(name)){
+        if(places.size() > 0){
+            for(Map.Entry<String, LatLng> entry: places.entrySet()){
+                if(name.equals(entry.getKey())){
                     Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
                 }
             }
-
-        }else{
+        }else
             places.put(name,latLng);
-            listPlaces.add(places);       //actually might not need to use list
-        }
     }
 
 
@@ -127,5 +135,9 @@ public class LocationNames {
 
     public Map<String, LatLng> getPlaces(){
         return places;
+    }
+
+    public double getRadius(){
+        return radius;
     }
 }

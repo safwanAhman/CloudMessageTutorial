@@ -147,7 +147,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter("IntentKey"));
 
-        locationNames.setPlaces("MC DONALD", mDefaultLocation, this);
+        locationNames.setPlaces("MC DONALD", mDefaultLocation, 70,this);
 
         checkGeoQuery(mMap);
     }
@@ -417,20 +417,19 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         locationNames.setMarker(googleMap,mDefaultLocation,"MCD", "this is my spot");
         locationNames.setMarker(googleMap, crossfit, "673 Jerudong", "Gym");
 
-
-
         //Add Geoquery
         //convert meter in kilometer
         //example 1000 meter = 1.0fm
         //check against locationNames instead of hardcoding it by looping through all the given names and latlng
-
         GeoQuery geoQuery
                 = geoFire.queryAtLocation(new GeoLocation (here.latitude,here.longitude), 7.6f);
 
         if(locationNames.getSize() > 0 ) {
             for(Map.Entry<String,LatLng> entry: locationNames.getPlaces().entrySet()) {
+                //show all entry of the map data set
                 geoQuery =
-                        geoFire.queryAtLocation(new GeoLocation(locationNames.getLatLng("MCD").latitude, locationNames.getLatLng("MCD").longitude), 7.6f);
+                   geoFire.queryAtLocation(new GeoLocation(entry.getValue().latitude, entry.getValue().longitude), locationNames.getRadius());
+
             }
         }else
             geoQuery =
@@ -467,6 +466,10 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 Log.e("ERROR",  "" +error);
             }
         });
+
+    }
+
+    private void radiusCheck(){
 
     }
 }
