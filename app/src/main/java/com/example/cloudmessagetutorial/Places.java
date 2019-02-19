@@ -32,6 +32,10 @@ public class Places {
         latLng = l;
     }
 
+    public LatLng getLatLng() {
+        return latLng;
+    }
+
     public void setRadius(double r){
         radius = r;
     }

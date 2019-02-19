@@ -45,7 +45,9 @@ public class LocationNames {
     //if have the same name then make it not work
     public void setPlaces(String name, LatLng latLng, double radius, Context context){
 
-
+        //checks in the list of places already have the same name
+        //if they do, do not add it into the list
+        //else add to the list
         if(placesList.size() >0){
             for(int count = 0; count < placesList.size(); count++){
                 if(placesList.get(count).getName().equals(name)){
@@ -55,18 +57,6 @@ public class LocationNames {
         }else
             placesList.add(new Places(name, latLng,radius));
 
-
-        //checks in the list of places already have the same name
-        //if they do, do not add it into the list
-        //else add to the list
-        if(places.size() > 0){
-            for(Map.Entry<String, LatLng> entry: places.entrySet()){
-                if(name.equals(entry.getKey())){
-                    Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
-                }
-            }
-        }else
-            places.put(name,latLng);
     }
 
 
@@ -85,12 +75,13 @@ public class LocationNames {
 
         defaultLatLng = new LatLng(0,0);
 
-        if(places.size() > 0){
-            for(Map.Entry<String, LatLng> entry: places.entrySet()){
-                if(name.equals(entry.getKey())){
-                    defaultLatLng = entry.getValue();
+        if(placesList.size() >0){
+            for(int count = 0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    defaultLatLng = placesList.get(count).getLatLng();
                 }
             }
+
         }
         return  defaultLatLng;
     }
@@ -101,10 +92,10 @@ public class LocationNames {
 
         defaultPlace = "Nowehere";
 
-        if(places.size() > 0){
-            for(Map.Entry<String, LatLng> entry: places.entrySet()){
-                if(latLng.equals(entry.getValue())){
-                    defaultPlace = entry.getKey();
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getLatLng().equals(latLng)){
+                    defaultPlace = placesList.get(count).getName();
                 }
             }
         }
