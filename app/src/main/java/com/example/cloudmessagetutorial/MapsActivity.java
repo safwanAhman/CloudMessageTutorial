@@ -128,7 +128,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         setUpLocation();
     }
 
-
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -386,6 +385,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         @Override
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
+            String namePlace = intent.getStringExtra("place");
             msgTittle = intent.getStringExtra("title");
             msgBody = intent.getStringExtra("body");
 
@@ -411,11 +411,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private void checkGeoQuery(GoogleMap googleMap){
 
         LatLng crossfit = new LatLng(4.930940, 114.840726);
+        LatLng house = new LatLng(4.899541, 114.849591);
 
         locationNames.setRadius(700);
 
         locationNames.setMarker(googleMap,mDefaultLocation,"MCD", "this is my spot");
         locationNames.setMarker(googleMap, crossfit, "673 Jerudong", "Gym");
+        locationNames.setMarker(googleMap,house,"House", "My House");
 
         //Add Geoquery
         //convert meter in kilometer
@@ -425,50 +427,53 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 = geoFire.queryAtLocation(new GeoLocation (here.latitude,here.longitude), 7.6f);
 
         if(locationNames.getSize() > 0 ) {
-            for(Map.Entry<String,LatLng> entry: locationNames.getPlaces().entrySet()) {
+            for (int count = 0; count < locationNames.getSize(); count++) {
+
+                LatLng placesLatlng = locationNames.getLatLng(locationNames.getPlacesList().get(count).getName());
+                double r = locationNames.getRadius(locationNames.getPlacesList().get(count).getName());
                 //show all entry of the map data set
                 geoQuery =
-                   geoFire.queryAtLocation(new GeoLocation(entry.getValue().latitude, entry.getValue().longitude), locationNames.getRadius());
+                        geoFire.queryAtLocation(new GeoLocation(placesLatlng.latitude, placesLatlng.longitude), r);
 
+                //checks when the device in radius of the given in location
+                geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+                    @Override
+                    public void onKeyEntered(String key, GeoLocation location) {
+
+                        isInRadius = true;
+                    }
+
+                    @Override
+                    public void onKeyExited(String key) {
+
+                        isInRadius = false;
+                    }
+
+                    @Override
+                    public void onKeyMoved(String key, GeoLocation location) {
+                        Log.d("MOVED", String.format(" %s moved within the dangerous area [%f/%f]", key, location.latitude, location.longitude));
+                        isInRadius = false;
+                    }
+
+                    @Override
+                    public void onGeoQueryReady() {
+
+                    }
+
+                    @Override
+                    public void onGeoQueryError(DatabaseError error) {
+                        Log.e("ERROR", "" + error);
+                    }
+                });
             }
         }else
             geoQuery =
                     geoFire.queryAtLocation(new GeoLocation(locationNames.getLatLng("673 Jerudong").latitude, locationNames.getLatLng("673 Jerudong").longitude), 7.6f);
 
-        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
-            @Override
-            public void onKeyEntered(String key, GeoLocation location) {
-
-                isInRadius = true;
-            }
-
-            @Override
-            public void onKeyExited(String key) {
-
-                isInRadius = false;
-            }
-
-            @Override
-            public void onKeyMoved(String key, GeoLocation location) {
-                Log.d("MOVED", String.format(" %s moved within the dangerous area [%f/%f]" ,key,location.latitude,location.longitude));
-                isInRadius = false;
-
-
-            }
-
-            @Override
-            public void onGeoQueryReady() {
-
-            }
-
-            @Override
-            public void onGeoQueryError(DatabaseError error) {
-                Log.e("ERROR",  "" +error);
-            }
-        });
-
     }
 
+
+    //check radius of each message against
     private void radiusCheck(){
 
     }

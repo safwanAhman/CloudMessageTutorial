@@ -118,17 +118,30 @@ public class LocationNames {
     }
 
     public int getSize(){
-        if(places == null){
+        if(placesList == null){
             return 0;
         }else
-            return places.size();
+            return placesList.size();
     }
 
     public Map<String, LatLng> getPlaces(){
         return places;
     }
 
-    public double getRadius(){
+    public double getRadius(String name){
+        radius = 50;
+
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    placesList.get(count).getRadius();
+                }
+            }
+        }
         return radius;
+    }
+
+    public List<Places> getPlacesList(){
+        return placesList;
     }
 }
