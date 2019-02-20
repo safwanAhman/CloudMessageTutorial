@@ -54,7 +54,6 @@ import com.example.cloudmessagetutorial.LocationNames;
 
 import java.util.Map;
 
-
 public class MapsActivity extends FragmentActivity implements  OnMapReadyCallback
         , GoogleApiClient.ConnectionCallbacks
         ,GoogleApiClient.OnConnectionFailedListener
@@ -88,6 +87,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     private final String TAG = "VB LOG TEXT";
     GeoFire geoFire;
+
+    String currentPlace = "Valak is here";
 
    LocationNames locationNames;
 
@@ -146,7 +147,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter("IntentKey"));
 
-        locationNames.setPlaces("MC DONALD", mDefaultLocation, 70,this);
+
+        LatLng crossfit = new LatLng(4.930940, 114.840726);
+        LatLng house = new LatLng(4.899541, 114.849591);
+
+        locationNames.setPlaces("MCD", mDefaultLocation, 700,this, googleMap,"lets eat here");
+        locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
+        locationNames.setPlaces("House", house, 70,this, googleMap,"my house");
 
         checkGeoQuery(mMap);
     }
@@ -398,10 +405,10 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 msgBody = "No messages";
             }
 
-            if(isInRadius) {
+            if(isInRadius && namePlace.equals(currentPlace)) {
                 sendNotification(msgTittle, msgBody);
-
             }
+
             Log.d(TAG, msgBody);
         }
     };
@@ -410,18 +417,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     //might need to add more parameter to fit in the set marker
     private void checkGeoQuery(GoogleMap googleMap){
 
-        LatLng crossfit = new LatLng(4.930940, 114.840726);
-        LatLng house = new LatLng(4.899541, 114.849591);
-
-        locationNames.setRadius(700);
-
-        locationNames.setMarker(googleMap,mDefaultLocation,"MCD", "this is my spot");
-        locationNames.setMarker(googleMap, crossfit, "673 Jerudong", "Gym");
-        locationNames.setMarker(googleMap,house,"House", "My House");
-
         //Add Geoquery
         //convert meter in kilometer
-        //example 1000 meter = 1.0fm
+        //example 1000 meter = 1.0km
         //check against locationNames instead of hardcoding it by looping through all the given names and latlng
         GeoQuery geoQuery
                 = geoFire.queryAtLocation(new GeoLocation (here.latitude,here.longitude), 7.6f);
@@ -429,22 +427,27 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         if(locationNames.getSize() > 0 ) {
             for (int count = 0; count < locationNames.getSize(); count++) {
 
+                currentPlace = locationNames.getPlacesList().get(count).getName();
+
                 LatLng placesLatlng = locationNames.getLatLng(locationNames.getPlacesList().get(count).getName());
                 double r = locationNames.getRadius(locationNames.getPlacesList().get(count).getName());
+
+                Log.d("BRITNEY CHECK mapactivity:     ",  Double.toString(r));
+
                 //show all entry of the map data set
                 geoQuery =
-                        geoFire.queryAtLocation(new GeoLocation(placesLatlng.latitude, placesLatlng.longitude), r);
+                        geoFire.queryAtLocation(new GeoLocation(placesLatlng.latitude, placesLatlng.longitude), (r/1000));
 
                 //checks when the device in radius of the given in location
                 geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
                     @Override
                     public void onKeyEntered(String key, GeoLocation location) {
-
                         isInRadius = true;
                     }
 
                     @Override
                     public void onKeyExited(String key) {
+
 
                         isInRadius = false;
                     }

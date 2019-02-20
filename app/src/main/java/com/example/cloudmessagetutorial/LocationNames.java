@@ -2,6 +2,7 @@ package com.example.cloudmessagetutorial;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 /*
 * This class is used to set location and latlng
@@ -43,7 +43,7 @@ public class LocationNames {
     //add to the list of places
     //error check with same name
     //if have the same name then make it not work
-    public void setPlaces(String name, LatLng latLng, double radius, Context context){
+    public void setPlaces(String name, LatLng latLng, double radius, Context context, GoogleMap googleMap, String text ){
 
         //checks in the list of places already have the same name
         //if they do, do not add it into the list
@@ -57,14 +57,20 @@ public class LocationNames {
         }else
             placesList.add(new Places(name, latLng,radius));
 
+        googleMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(name)
+                .snippet(text)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+        googleMap.addCircle(new CircleOptions()
+                .center(latLng)
+                .radius(radius)//is in meter
+                .strokeColor(Color.BLUE)
+                .fillColor(0x222000FF)
+                .strokeWidth(5.0f));
+
     }
-
-
-    //REMINDER: radius is in meter
-    public void setRadius(double r){
-        radius = r;
-    }
-
 
     //search list of the name and return the latlng
     //not sure if it works, have to check
@@ -102,20 +108,6 @@ public class LocationNames {
         return  defaultPlace;
     }
 
-    public void setMarker(GoogleMap googleMap, LatLng location, String name, String text){
-        googleMap.addMarker(new MarkerOptions()
-                .position(location)
-                .title(name)
-                .snippet(text)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-
-        googleMap.addCircle(new CircleOptions()
-                .center(location)
-                .radius(radius)//is in meter
-                .strokeColor(Color.BLUE)
-                .fillColor(0x222000FF)
-                .strokeWidth(5.0f));
-    }
 
     public int getSize(){
         if(placesList == null){
@@ -134,10 +126,12 @@ public class LocationNames {
         if(placesList.size() > 0){
             for(int count=0; count < placesList.size(); count++){
                 if(placesList.get(count).getName().equals(name)){
-                    placesList.get(count).getRadius();
+                    radius = placesList.get(count).getRadius();
                 }
             }
         }
+
+        Log.d("BRITNEY CHECK locationname:     ",  Double.toString(radius));
         return radius;
     }
 

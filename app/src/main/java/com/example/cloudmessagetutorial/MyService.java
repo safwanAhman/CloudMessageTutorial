@@ -45,27 +45,16 @@ public class MyService extends FirebaseMessagingService {
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
 
-            if (/* Check if data needs to be processed by long running job */ true) {
-                // For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
-                scheduleJob();
-            } else {
-                // Handle message within 10 seconds
-                handleNow();
-            }
+            bundle.putString("valueName", remoteMessage.getData().get("body"));
+            intent.putExtra("body", remoteMessage.getData().get("body"));
+            intent.putExtra("title", remoteMessage.getData().get("title"));
+            intent.putExtra("place", remoteMessage.getData().get("place"));
 
+            remoteMessage.getData().values();
+
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         }
 
-        // Check if message contains a notification payload.
-      if (remoteMessage.getNotification() != null) {
-          bundle.putString("valueName", remoteMessage.getData().get("body"));
-          intent.putExtra("body", remoteMessage.getData().get("body"));
-          intent.putExtra("title", remoteMessage.getData().get("title"));
-          intent.putExtra("location", remoteMessage.getData().get("location"));
-
-          remoteMessage.getData().values();
-
-          LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-      }
     }
 
     private void scheduleJob() {
@@ -80,11 +69,7 @@ public class MyService extends FirebaseMessagingService {
 
     }
 
-    private void handleNow() {
-    }
-
-
-    /**
+     /**
      * Called if InstanceID token is updated. This may occur if the security of
      * the previous token had been compromised. Note that this is called when the InstanceID token
      * is initially generated so this is where you would retrieve the token.
