@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.support.annotation.NonNull;
@@ -36,8 +35,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -50,9 +47,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
-import com.example.cloudmessagetutorial.LocationNames;
-
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements  OnMapReadyCallback
         , GoogleApiClient.ConnectionCallbacks
@@ -78,19 +74,20 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private static int FASTEST_INTERVAL = 3000;
     private static int DISPLACEMENT = 10;
 
-    private String msgTittle;
+    private String msgTitle;
     private String msgBody;
+    private String currentPlace = "Valak is here";
+    private String namePlace;
 
-    Marker mCurrent;
-    Marker myMarker;
-    DatabaseReference ref;
+    private Marker mCurrent;
+    private DatabaseReference ref;
 
     private final String TAG = "VB LOG TEXT";
-    GeoFire geoFire;
+    private GeoFire geoFire;
 
-    String currentPlace = "Valak is here";
+    private List<Messages> unsendMessagesList = new ArrayList<>();
 
-   LocationNames locationNames;
+    private LocationNames locationNames;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,10 +147,14 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
         LatLng crossfit = new LatLng(4.930940, 114.840726);
         LatLng house = new LatLng(4.899541, 114.849591);
+        LatLng huahomanggis = new LatLng(4.947292, 114.960772);
+        LatLng giant = new LatLng(4.952149, 114.907406);
 
         locationNames.setPlaces("MCD", mDefaultLocation, 700,this, googleMap,"lets eat here");
         locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
         locationNames.setPlaces("House", house, 70,this, googleMap,"my house");
+        locationNames.setPlaces("HuaHo Manggis", huahomanggis, 70,this, googleMap,"buy BB's watch pls");
+        locationNames.setPlaces("Giant", giant, 300,this,googleMap,"We are meeting at Jolibee");
 
         checkGeoQuery(mMap);
     }
@@ -392,22 +393,28 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         @Override
         public void onReceive(Context context, Intent intent) {
             // Get extra data included in the Intent
-            String namePlace = intent.getStringExtra("place");
-            msgTittle = intent.getStringExtra("title");
+            namePlace = intent.getStringExtra("place");
+            msgTitle = intent.getStringExtra("title");
             msgBody = intent.getStringExtra("body");
 
             //Need to check if messages receive is null
-            if(msgTittle == null){
-                msgTittle = "FCM Message";
+            if(msgTitle == null){
+                msgTitle = "FCM Message";
             }
 
             if(msgBody == null){
                 msgBody = "No messages";
             }
 
+            //loop through all name place to see if it matches
             if(isInRadius && namePlace.equals(currentPlace)) {
-                sendNotification(msgTittle, msgBody);
+                sendNotification(msgTitle, msgBody);
+            }else{
+                //if there is a messsage that is being received but it is not in a radius
+                //that it can receieved then it will be put in here
+                unsendMessagesList.add(new Messages(namePlace, msgTitle,msgBody));
             }
+
 
             Log.d(TAG, msgBody);
         }
@@ -426,13 +433,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
         if(locationNames.getSize() > 0 ) {
             for (int count = 0; count < locationNames.getSize(); count++) {
-
                 currentPlace = locationNames.getPlacesList().get(count).getName();
-
                 LatLng placesLatlng = locationNames.getLatLng(locationNames.getPlacesList().get(count).getName());
                 double r = locationNames.getRadius(locationNames.getPlacesList().get(count).getName());
-
-                Log.d("BRITNEY CHECK mapactivity:     ",  Double.toString(r));
 
                 //show all entry of the map data set
                 geoQuery =
@@ -443,12 +446,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                     @Override
                     public void onKeyEntered(String key, GeoLocation location) {
                         isInRadius = true;
+
+                        //check for any unsend messages when it enters an area
+                        checkUnsendMessages();
                     }
 
                     @Override
                     public void onKeyExited(String key) {
-
-
                         isInRadius = false;
                     }
 
@@ -472,12 +476,22 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         }else
             geoQuery =
                     geoFire.queryAtLocation(new GeoLocation(locationNames.getLatLng("673 Jerudong").latitude, locationNames.getLatLng("673 Jerudong").longitude), 7.6f);
-
     }
 
+    //when messages are not in the radius of the location it is intended to be send to
+    //it is put in the list of unsend messages
+    //deaadasssssssss
+    public void checkUnsendMessages(){
+        if(unsendMessagesList.size() > 0 ){
+            for(int count = 0; count < unsendMessagesList.size(); count++){
+                if(unsendMessagesList.get(count).getPlace().equals(namePlace)){
+                    //send notification to device
+                    sendNotification(unsendMessagesList.get(count).getTitle(), unsendMessagesList.get(count).getBody());
+                    unsendMessagesList.remove(count);
+                }
+            }
 
-    //check radius of each message against
-    private void radiusCheck(){
-
+        }
     }
+
 }

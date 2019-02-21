@@ -131,7 +131,6 @@ public class LocationNames {
             }
         }
 
-        Log.d("BRITNEY CHECK locationname:     ",  Double.toString(radius));
         return radius;
     }
 

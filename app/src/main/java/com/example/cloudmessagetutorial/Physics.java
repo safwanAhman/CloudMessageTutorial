@@ -2,6 +2,8 @@ package com.example.cloudmessagetutorial;
 
 import com.google.android.gms.maps.model.LatLng;
 
+
+//Currently not needed
 public class Physics {
 
     public Physics(){}
