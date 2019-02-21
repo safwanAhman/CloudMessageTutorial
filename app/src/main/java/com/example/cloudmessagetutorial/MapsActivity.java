@@ -149,12 +149,18 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng house = new LatLng(4.899541, 114.849591);
         LatLng huahomanggis = new LatLng(4.947292, 114.960772);
         LatLng giant = new LatLng(4.952149, 114.907406);
+        LatLng pizza = new LatLng(4.901201, 114.901684);
+        LatLng haz = new LatLng(4.917353, 114.911082);
 
         locationNames.setPlaces("MCD", mDefaultLocation, 700,this, googleMap,"lets eat here");
         locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
         locationNames.setPlaces("House", house, 70,this, googleMap,"my house");
         locationNames.setPlaces("HuaHo Manggis", huahomanggis, 70,this, googleMap,"buy BB's watch pls");
         locationNames.setPlaces("Giant", giant, 300,this,googleMap,"We are meeting at Jolibee");
+        locationNames.setPlaces("Pizza", pizza, 400,this,googleMap,"Lets eat Pizza");
+        locationNames.setPlaces("Haz", haz, 300,this,googleMap,"My second gym is here");
+
+
 
         checkGeoQuery(mMap);
     }
@@ -214,6 +220,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
                     final double latitude = mLastLocation.getLatitude();
                     final double longtitiude = mLastLocation.getLongitude();
+
+
 
                    //update to database
                     geoFire.setLocation("You", new GeoLocation(latitude, longtitiude),
@@ -409,12 +417,33 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             //loop through all name place to see if it matches
             if(isInRadius && namePlace.equals(currentPlace)) {
                 sendNotification(msgTitle, msgBody);
+                unsendMessagesList.add(new Messages(msgTitle,msgBody,namePlace));
+
             }else{
                 //if there is a messsage that is being received but it is not in a radius
                 //that it can receieved then it will be put in here
-                unsendMessagesList.add(new Messages(namePlace, msgTitle,msgBody));
+                unsendMessagesList.add(new Messages(msgTitle,msgBody,namePlace));
             }
 
+
+            //just to check if messages is being added to the list or not
+            if(unsendMessagesList.size() > 0 ) {
+                for (int count = 0; count < unsendMessagesList.size(); count++) {
+                    //if (unsendMessagesList.get(count).getPlace().equals(namePlace))
+
+                    Log.d("UNSENT EQUALS: " , Boolean.toString(unsendMessagesList.get(count).getPlace().equals(namePlace)));
+
+                    Log.d("UNSENT NAMEPLACE: ", namePlace);
+                        Log.d("UNSENT CURRENTPLACE: ", unsendMessagesList.get(count).getPlace());
+
+                    //send notification to device
+                        Log.d("UNSENT TITLE: ", unsendMessagesList.get(count).getTitle());
+                        Log.d("UNSENT BODY: ", unsendMessagesList.get(count).getBody());
+                        Log.d("UNSENT PLACE: ", unsendMessagesList.get(count).getPlace());
+
+
+                }
+            }
 
             Log.d(TAG, msgBody);
         }
@@ -448,7 +477,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                         isInRadius = true;
 
                         //check for any unsend messages when it enters an area
-                        checkUnsendMessages();
+                        checkUnsendMessages(currentPlace);
                     }
 
                     @Override
@@ -481,13 +510,24 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     //when messages are not in the radius of the location it is intended to be send to
     //it is put in the list of unsend messages
     //deaadasssssssss
-    public void checkUnsendMessages(){
+    public void checkUnsendMessages(String current){
         if(unsendMessagesList.size() > 0 ){
             for(int count = 0; count < unsendMessagesList.size(); count++){
-                if(unsendMessagesList.get(count).getPlace().equals(namePlace)){
+                if(isInRadius && unsendMessagesList.get(count).getPlace().equals(current)){
+
+                    Log.d("UNSENT EQUALS: " , Boolean.toString(unsendMessagesList.get(count).getPlace().equals(current)));
+
+                    Log.d("UNSENT NAMEPLACE: ", current);
+
+                    Log.d("UNSENT TITLE: ", unsendMessagesList.get(count).getTitle());
+                    Log.d("UNSENT BODY: ", unsendMessagesList.get(count).getBody());
+                    Log.d("UNSENT PLACE: ", unsendMessagesList.get(count).getPlace());
+
                     //send notification to device
                     sendNotification(unsendMessagesList.get(count).getTitle(), unsendMessagesList.get(count).getBody());
                     unsendMessagesList.remove(count);
+
+
                 }
             }
 
