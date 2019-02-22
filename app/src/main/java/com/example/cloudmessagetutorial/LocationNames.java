@@ -54,8 +54,9 @@ public class LocationNames {
                     Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
                 }
             }
-        }else
-            placesList.add(new Places(name, latLng,radius));
+        }
+
+        placesList.add(new Places(name, latLng,radius));
 
         googleMap.addMarker(new MarkerOptions()
                 .position(latLng)
