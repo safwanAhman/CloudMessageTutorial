@@ -78,6 +78,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private String msgBody;
     private String currentPlace = "Valak is here";
     private String namePlace;
+    private String thisplace = "";
+    private String mood = "";
 
     private Marker mCurrent;
     private DatabaseReference ref;
@@ -91,6 +93,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     private List<GeoQuery> geoQueriesList = new ArrayList<>();
 
+
+    boolean sendMes = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,9 +131,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         geoFire = new GeoFire(ref);
 
         setUpLocation();
-
-        checkGeoQuery(mMap);
-
     }
 
     /**
@@ -159,7 +160,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng haz = new LatLng(4.917353, 114.911082);
         LatLng kia = new LatLng(4.981852, 114.953762);
 
-        locationNames.setPlaces("MCD", mDefaultLocation, 700,this, googleMap,"lets eat here");
+        locationNames.setPlaces("MCD", mDefaultLocation, 690,this, googleMap,"lets eat here");
         locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
         locationNames.setPlaces("House", house, 70,this, googleMap,"my house");
         locationNames.setPlaces("Giant", giant, 300,this,googleMap,"We are meeting at Jolibee");
@@ -168,9 +169,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         locationNames.setPlaces("KIA", kia, 400,this, googleMap,"Car broom broom");
         locationNames.setPlaces("HuaHo Manggis", huahomanggis, 70,this, googleMap,"buy BB's watch pls");
 
-
         Log.d("CHECK LOCATION SIZE: ", Integer.toString(locationNames.getSize()));
 
+        checkGeoQuery(mMap);
     }
 
     @Override
@@ -326,11 +327,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         });
     }
 
-    public boolean getIsInRadius(){
-        return  isInRadius;
-
-    }
-
     @Override
     public void onLocationChanged(Location location) {
         mLastLocation = location;
@@ -411,7 +407,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             msgTitle = intent.getStringExtra("title");
             msgBody = intent.getStringExtra("body");
 
-            Log.d("UNSENT CURRENTPLACE: ", currentPlace);
+            //for testing purposes
+            Log.d("SENDMESSAGETO: ", thisplace);
+            Log.d("CHECK ISINRADIUUS: ", Boolean.toString(isInRadius));
 
 
             //Need to check if messages receive is null
@@ -424,38 +422,14 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             }
 
             //loop through all name place to see if it matches
-            if(isInRadius && namePlace.equals(currentPlace)) {
+            if(isInRadius && namePlace.equals(mood)) {
                 sendNotification(msgTitle, msgBody);
-                unsendMessagesList.add(new Messages(msgTitle,msgBody,namePlace));
-
-                Log.d("SIZE OF UNSEND MESSAGES", Integer.toString(unsendMessagesList.size()));
 
             }else{
                 //if there is a messsage that is being received but it is not in a radius
                 //that it can receieved then it will be put in here
                 unsendMessagesList.add(new Messages(msgTitle,msgBody,namePlace));
-            }
-
-
-            //just to check if messages is being added to the list or not
-            if(unsendMessagesList.size() > 0 ) {
-                for (int count = 0; count < unsendMessagesList.size(); count++) {
-                    if (unsendMessagesList.get(count).getPlace().equals(currentPlace)) {
-
-                        Log.d("UNSENT EQUALS: ", Boolean.toString(unsendMessagesList.get(count).getPlace().equals(namePlace)));
-
-                        Log.d("UNSENT NAMEPLACE: ", namePlace);
-                        Log.d("UNSENT CURRENTPLACE: ", currentPlace);
-
-                        //send notification to device
-                        Log.d("UNSENT TITLE: ", unsendMessagesList.get(count).getTitle());
-                        Log.d("UNSENT BODY: ", unsendMessagesList.get(count).getBody());
-                        Log.d("UNSENT PLACE: ", unsendMessagesList.get(count).getPlace());
-
-                        sendNotification(unsendMessagesList.get(count).getTitle(), unsendMessagesList.get(count).getBody());
-
-                    }
-                }
+                checkUnsendMessages(mood);
             }
 
             Log.d(TAG, msgBody);
@@ -466,17 +440,29 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     //might need to add more parameter to fit in the set marker
     private void checkGeoQuery(GoogleMap googleMap){
 
-
         //checks when the device in radius of the given in location
         //PROBLEM: only check against the last set of the locationName
         GeoQueryEventListener listener = new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
-                isInRadius = true;
-                Log.d("places : ", currentPlace);
 
-                //check for any unsend messages when it enters an area
-                checkUnsendMessages(currentPlace);
+                LatLng device = new LatLng(location.latitude,location.longitude);
+
+                for(int count = 0; count < locationNames.getSize(); count++){
+                    String name = locationNames.getPlacesList().get(count).getName();
+                    LatLng checkAgainst = locationNames.getLatLng(locationNames.getPlacesList().get(count).getName());
+                    double distance = Physics.haversine(device, checkAgainst );
+
+                    if(Physics.isInArea(0.1,(locationNames.getRadius(name)/1000), distance)) {
+                        isInRadius = true;
+                        Log.d("1. places NAME is in area: ", name);
+                        Log.d("2. places RADIUS: ", Double.toString((locationNames.getRadius(name) / 1000)));
+                        Log.d("3. places DISTANCE: ", Double.toString(distance));
+
+                        mood = name;
+                    }
+               }
+               checkUnsendMessages(mood);
             }
 
             @Override
@@ -508,8 +494,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         //check against locationNames instead of hardcoding it by looping through all the given names and latlng
         Log.d("CHECK LOCATION SIZE: ", Integer.toString(locationNames.getSize()));
 
-        GeoQuery geoQuery = null;// =  geoFire.queryAtLocation(new GeoLocation(mDefaultLocation.latitude,mDefaultLocation.longitude), (10));
-
         if(locationNames.getSize() > 0 ) {
             for (int count = 0; count < locationNames.getSize(); count++) {
 
@@ -517,21 +501,12 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 LatLng placeslatlng = locationNames.getLatLng(currentPlace);
                 double r = locationNames.getRadius(currentPlace);
 
-                Log.d("GEOQUERY CHECK LOCATION: ", currentPlace);
-                Log.d("GEOQUERY CHECK LAT: ", Double.toString(placeslatlng.latitude));
-                Log.d("GEOQUERY CHECK LNG: ", Double.toString(placeslatlng.longitude));
-
-                //show all entry of the map data set
-                //geoQuery = geoFire.queryAtLocation(new GeoLocation(placeslatlng.latitude, placeslatlng.longitude), (r/1000));
-//                geoQuery.addGeoQueryEventListener(listener);
-
                 geoQueriesList.add(geoFire.queryAtLocation(new GeoLocation(placeslatlng.latitude, placeslatlng.longitude), (r/1000)));
                 geoQueriesList.get(count).addGeoQueryEventListener(listener);
 
-               // Log.d("GEOBOOL CHECK: ",  Double.toString(geoQuery.getRadius()));
-
             }
         }
+
 
     }
 
@@ -542,6 +517,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             for(int count = 0; count < unsendMessagesList.size(); count++){
                 if(isInRadius && unsendMessagesList.get(count).getPlace().equals(current)){
 
+                    //for testing purposes
                     Log.d("UNSENT EQUALS: " , Boolean.toString(unsendMessagesList.get(count).getPlace().equals(current)));
 
                     Log.d("UNSENT NAMEPLACE: ", current);
