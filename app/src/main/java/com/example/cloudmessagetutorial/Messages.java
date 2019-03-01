@@ -8,7 +8,7 @@ public class Messages {
     private String title,body,place;
     private int type;
     private LatLng latLng;
-    private final int TYPE_ACTIVITY = 1, TYPE_DISPLAY = 2, TYPE_WEBSITE = 3, TYPE_GENERAL = 4;
+    private final int   TYPE_ACTIVITY = 1, TYPE_DISPLAY = 2, TYPE_WEBSITE = 3, TYPE_GENERAL = 4;
 
 
     public Messages(){}

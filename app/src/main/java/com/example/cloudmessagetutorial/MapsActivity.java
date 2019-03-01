@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
@@ -88,13 +89,12 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private GeoFire geoFire;
 
     private List<Messages> unsendMessagesList = new ArrayList<>();
+    private List<Messages> backups = new ArrayList<>();
 
     private LocationNames locationNames;
 
     private List<GeoQuery> geoQueriesList = new ArrayList<>();
 
-
-    boolean sendMes = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,10 +129,36 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
         ref = FirebaseDatabase.getInstance().getReference("My Location");
         geoFire = new GeoFire(ref);
-
         setUpLocation();
+
     }
 
+    //actually not sure if needed,
+    //need to double check on it
+    @Override
+    public void onStart(){
+        super.onStart();
+        unsendMessagesList  = backups;
+        displayLocation();
+        checkGeoQuery(mMap);
+    }
+
+
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        //might not need to display location again and again
+        displayLocation();   //might not need to display location again and again
+        checkGeoQuery(mMap);
+    }
+
+    @Override
+    public void onDestroy(){
+        super.onDestroy();
+        //SharedPreferences settings = getSharedPreferences("TEST", 0)
+        backups = unsendMessagesList;
+    }
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -159,6 +185,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng pizza = new LatLng(4.901201, 114.901684);
         LatLng haz = new LatLng(4.917353, 114.911082);
         LatLng kia = new LatLng(4.981852, 114.953762);
+        LatLng relentless = new LatLng(4.907545, 114.924353);
 
         locationNames.setPlaces("MCD", mDefaultLocation, 690,this, googleMap,"lets eat here");
         locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
@@ -168,10 +195,12 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         locationNames.setPlaces("Haz", haz, 300,this,googleMap,"My second gym is here");
         locationNames.setPlaces("KIA", kia, 400,this, googleMap,"Car broom broom");
         locationNames.setPlaces("HuaHo Manggis", huahomanggis, 70,this, googleMap,"buy BB's watch pls");
+        locationNames.setPlaces("Relentless", relentless, 600, this, googleMap, "dance dance dannce");
 
         Log.d("CHECK LOCATION SIZE: ", Integer.toString(locationNames.getSize()));
 
         checkGeoQuery(mMap);
+
     }
 
     @Override
@@ -315,7 +344,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                     LatLng currentLoc = new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude());
                     mMap.addMarker(new MarkerOptions().position(currentLoc).title("ME"));
 
-
                 } else {
                     Log.d(TAG, "Current location is null. Using defaults.");
                     Log.e(TAG, "Exception: %s", task.getException());
@@ -408,7 +436,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             msgBody = intent.getStringExtra("body");
 
             //for testing purposes
-            Log.d("SENDMESSAGETO: ", thisplace);
+            Log.d("SENDMESSAGETO: ", mood);
             Log.d("CHECK ISINRADIUUS: ", Boolean.toString(isInRadius));
 
 
@@ -506,8 +534,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
             }
         }
-
-
     }
 
     //when messages are not in the radius of the location it is intended to be send to
@@ -515,17 +541,24 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     public void checkUnsendMessages(String current){
         if(unsendMessagesList.size() > 0 ){
             for(int count = 0; count < unsendMessagesList.size(); count++){
+                //for testing purposes
+                //in theory should work, but it doeSNT
+                Log.d("UNSEND MESSAGE SIZE: ", Integer.toString(unsendMessagesList.size()) );
+
+                //for testing purposes
+                Log.d("UNSENT EQUALS: " , Boolean.toString(unsendMessagesList.get(count).getPlace().equals(current)));
+
+                Log.d("UNSENT CURRENT LOCATION: ", current);
+
+                Log.d("UNSENT TITLE: ", unsendMessagesList.get(count).getTitle());
+                Log.d("UNSENT BODY: ", unsendMessagesList.get(count).getBody());
+                Log.d("UNSENT PLACE: ", unsendMessagesList.get(count).getPlace());
+                Log.d("=========================================: ", "=========================================: ");
+                Log.d("=========================================: ", "=========================================: ");
+                Log.d("=========================================: ", "=========================================: ");
+                Log.d("=========================================: ", "=========================================: ");
+
                 if(isInRadius && unsendMessagesList.get(count).getPlace().equals(current)){
-
-                    //for testing purposes
-                    Log.d("UNSENT EQUALS: " , Boolean.toString(unsendMessagesList.get(count).getPlace().equals(current)));
-
-                    Log.d("UNSENT NAMEPLACE: ", current);
-
-                    Log.d("UNSENT TITLE: ", unsendMessagesList.get(count).getTitle());
-                    Log.d("UNSENT BODY: ", unsendMessagesList.get(count).getBody());
-                    Log.d("UNSENT PLACE: ", unsendMessagesList.get(count).getPlace());
-
                     //send notification to device
                     sendNotification(unsendMessagesList.get(count).getTitle(), unsendMessagesList.get(count).getBody());
                     unsendMessagesList.remove(count);
