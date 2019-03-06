@@ -517,7 +517,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 //if there is a messsage that is being received but it is not in a radius
                 //that it can receieved then it will be put in here
 
-                //max size is 5 //currently NOT properly working...why
+                //max size is 5 //currently NOT properly working..why
                 if(unsendMessagesList.size() >= 5){
                     Log.d("MSGSIZE: ", "unsendmsgsize is " + Integer.toString(unsendMessagesList.size()));
                     unsendMessagesList.remove(0);   //removes first element in the list. Should be FIFO
