@@ -51,6 +51,19 @@ import com.google.firebase.iid.InstanceIdResult;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+ *
+ *
+ * Where Map is being shown and shows device location
+ * Uses all the other classes to send notification via Firebase
+ * Uses physics class to determine location of message and uses Geoquery
+ * to determine the location of device.
+ *
+ *
+ * Author: Safwan Ahman
+ *
+ * */
+
 public class MapsActivity extends FragmentActivity implements  OnMapReadyCallback
         , GoogleApiClient.ConnectionCallbacks
         ,GoogleApiClient.OnConnectionFailedListener
@@ -79,7 +92,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private String msgBody;
     private String currentPlace = "Valak is here";
     private String namePlace;
-    private String thisplace = "";
     private String mood = "";
 
     private Marker mCurrent;
@@ -89,7 +101,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private GeoFire geoFire;
 
     private List<Messages> unsendMessagesList = new ArrayList<>();
-    private List<Messages> backups = new ArrayList<>();
 
     private LocationNames locationNames;
 
@@ -133,31 +144,73 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     }
 
-    //actually not sure if needed,
-    //need to double check on it
-    @Override
-    public void onStart(){
-        super.onStart();
-        unsendMessagesList  = backups;
-        displayLocation();
-        checkGeoQuery(mMap);
-    }
-
-
 
     @Override
     public void onResume(){
         super.onResume();
+
+        Log.d("ONRESUME" , "ENTERING ON RESUME");
+
+        SharedPreferences e = getSharedPreferences("SHARED", MODE_PRIVATE);
+
+        int restoredText = e.getInt("size", 0);
+        if(restoredText != 0){
+            for(int i=0; i < e.getInt("size",0); i++ ){
+                String title = "title" + Integer.toString(i);
+                String body = "body" + Integer.toString(i);
+                String place = "place" + Integer.toString(i);
+                //String lat = "lat" + Integer.toString(i);
+                //String lon  = "lon" + Integer.toString(i);
+
+                String t = e.getString(title,  "(no title)");
+                String b = e.getString(body, "(no body)");
+                String p = e.getString(place, "(no place)");
+                //String la = e.getString(lat, "(no latitude)");
+                ///String lo = e.getString(lon, "(no longitude");  //need to put in after type is implemented
+
+                unsendMessagesList.add(new Messages(t,b, p) ); //, new LatLng(Double.valueOf( la),Double.valueOf( lo)) );
+                Log.d("ONRESUME: ", t);
+                Log.d("ONRESUME: ", b);
+                Log.d("ONRESUME: ", p);
+                Log.d("ONRESUME SIZE: ", Integer.toString(unsendMessagesList.size()));
+            }
+        }
+
+        e.edit().clear();
+        e.edit().commit();
+
         //might not need to display location again and again
-        displayLocation();   //might not need to display location again and again
-        checkGeoQuery(mMap);
+        checkUnsendMessages(mood);
     }
 
     @Override
-    public void onDestroy(){
-        super.onDestroy();
+    public void onPause(){
+        super.onPause();
         //SharedPreferences settings = getSharedPreferences("TEST", 0)
-        backups = unsendMessagesList;
+        SharedPreferences.Editor editor = (SharedPreferences.Editor) getSharedPreferences("SHARED", MODE_PRIVATE).edit();
+
+        for(int count = 0; count < unsendMessagesList.size(); count++){
+            String title = "title" + Integer.toString(count);
+            String body = "body" + Integer.toString(count);
+            String place = "place" + Integer.toString(count);
+          //  String lat = "lat" + Integer.toString(count);
+          //  String lon  = "lon" + Integer.toString(count);
+            //String type = "type" + Integer.toString(count);    //not being used now, for future purposes
+
+            editor.putString(title, unsendMessagesList.get(count).getTitle() );
+            editor.putString(body, unsendMessagesList.get(count).getBody() );
+            editor.putString(place, unsendMessagesList.get(count).getPlace() );
+            editor.putInt("size", unsendMessagesList.size());
+
+       //     editor.putString(lat, Double.toString(unsendMessagesList.get(count).getLatLng().latitude) );
+       //     editor.putString(lon,Double.toString(unsendMessagesList.get(count).getLatLng().longitude));
+        }
+        editor.clear();
+        editor.commit();
+        unsendMessagesList.clear();
+        Log.d("onPause", "SUCCESSFULLY COMMITTED");
+        checkUnsendMessages(mood);
+
     }
     /**
      * Manipulates the map once available.
@@ -187,7 +240,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng kia = new LatLng(4.981852, 114.953762);
         LatLng relentless = new LatLng(4.907545, 114.924353);
 
-        locationNames.setPlaces("MCD", mDefaultLocation, 690,this, googleMap,"lets eat here");
+        locationNames.setPlaces("MCD", mDefaultLocation,  700,this, googleMap,"lets eat here");
         locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
         locationNames.setPlaces("House", house, 70,this, googleMap,"my house");
         locationNames.setPlaces("Giant", giant, 300,this,googleMap,"We are meeting at Jolibee");
@@ -199,8 +252,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
         Log.d("CHECK LOCATION SIZE: ", Integer.toString(locationNames.getSize()));
 
-        checkGeoQuery(mMap);
-
+        //only place where it should be
+        checkGeoQuery(googleMap);
     }
 
     @Override
@@ -212,6 +265,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                         buildGoogleApiClient();
                         createLocationRequest();
                         displayLocation();
+
                     }
                 }break;
 
@@ -264,7 +318,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                             new GeoFire.CompletionListener() {
                                 @Override
                                 public void onComplete(String key, DatabaseError error) {
-                                    //add marker
+
                                     if(mCurrent != null)
                                         mCurrent.remove();   //remove old marker
                                     mCurrent = mMap.addMarker(new MarkerOptions()
@@ -359,6 +413,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     public void onLocationChanged(Location location) {
         mLastLocation = location;
         displayLocation();
+
+        // Log and toast
+        //to check when it is triggered
+        Log.d("LOCATIONCAHGNED", "LOCATION CHANGED TO" + Double.toString(location.getLatitude()) + ", " + Double.toString(location.getLongitude()));
+        Toast.makeText(MapsActivity.this,
+                "LOCATION CHANGED TO" + Double.toString(location.getLatitude()) + ", " + Double.toString(location.getLongitude()),
+                Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -439,7 +500,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             Log.d("SENDMESSAGETO: ", mood);
             Log.d("CHECK ISINRADIUUS: ", Boolean.toString(isInRadius));
 
-
             //Need to check if messages receive is null
             if(msgTitle == null){
                 msgTitle = "FCM Message";
@@ -456,7 +516,17 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             }else{
                 //if there is a messsage that is being received but it is not in a radius
                 //that it can receieved then it will be put in here
-                unsendMessagesList.add(new Messages(msgTitle,msgBody,namePlace));
+
+                //max size is 5 //currently NOT properly working...why...girl idek
+                if(unsendMessagesList.size() >= 5){
+                    Log.d("MSGSIZE: ", "unsendmsgsize is " + Integer.toString(unsendMessagesList.size()));
+                    unsendMessagesList.remove(0);   //removes first element in the list. Should be FIFO
+                    unsendMessagesList.add(new Messages(msgTitle,msgBody,namePlace));
+
+                }else {
+                    unsendMessagesList.add(new Messages(msgTitle, msgBody, namePlace));
+                }
+
                 checkUnsendMessages(mood);
             }
 
@@ -491,11 +561,20 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                     }
                }
                checkUnsendMessages(mood);
+
+                Log.d("LOCATIONCAHGNED", "LOCATION CHANGED TO" + Double.toString(location.latitude) + ", " + Double.toString(location.longitude));
+                Toast.makeText(MapsActivity.this,
+                        "LOCATION CHANGED TO" + Double.toString(location.latitude) + ", " + Double.toString(location.longitude),
+                        Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onKeyExited(String key) {
 
+                // Log and toast
+                //to check when it is triggered
+                Log.d("LOCATIONCAHGNED EXITED", "LOCATION EXIT");// + Double.toString(location.getLatitude()) + ", " + Double.toString(location.getLongitude()));
+                Toast.makeText(MapsActivity.this, "LOCATION EXIT", Toast.LENGTH_SHORT).show();
                 isInRadius = false;
             }
 
