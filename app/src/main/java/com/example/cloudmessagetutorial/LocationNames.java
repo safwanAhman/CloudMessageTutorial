@@ -51,25 +51,42 @@ public class LocationNames {
         if(placesList.size() >0){
             for(int count = 0; count < placesList.size(); count++){
                 if(placesList.get(count).getName().equals(name)){
-                    Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
+                  //  Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
+                    return;
                 }
             }
+
+
+            placesList.add(new Places(name, latLng,radius));
+
+            googleMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title(name)
+                    .snippet(text)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+            googleMap.addCircle(new CircleOptions()
+                    .center(latLng)
+                    .radius(radius)//is in meter
+                    .strokeColor(Color.BLUE)
+                    .fillColor(0x222000FF)
+                    .strokeWidth(5.0f));
+        }else{
+            placesList.add(new Places(name, latLng,radius));
+
+            googleMap.addMarker(new MarkerOptions()
+                    .position(latLng)
+                    .title(name)
+                    .snippet(text)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+            googleMap.addCircle(new CircleOptions()
+                    .center(latLng)
+                    .radius(radius)//is in meter
+                    .strokeColor(Color.BLUE)
+                    .fillColor(0x222000FF)
+                    .strokeWidth(5.0f));
         }
-
-        placesList.add(new Places(name, latLng,radius));
-
-        googleMap.addMarker(new MarkerOptions()
-                .position(latLng)
-                .title(name)
-                .snippet(text)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-
-        googleMap.addCircle(new CircleOptions()
-                .center(latLng)
-                .radius(radius)//is in meter
-                .strokeColor(Color.BLUE)
-                .fillColor(0x222000FF)
-                .strokeWidth(5.0f));
 
     }
 
