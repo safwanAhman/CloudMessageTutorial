@@ -3,6 +3,17 @@ package com.example.cloudmessagetutorial;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.messaging.MessagingAnalytics;
 
+
+/*
+*
+* A message object that contains
+* title, body, type, latlng
+*
+* TYPE currently not implemented yet
+*
+* Author: Safwan Ahman
+*
+* */
 public class Messages {
 
     private String title,body,place;

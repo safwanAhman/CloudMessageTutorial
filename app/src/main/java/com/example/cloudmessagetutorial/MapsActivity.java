@@ -1,23 +1,17 @@
 package com.example.cloudmessagetutorial;
 
 import android.Manifest;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -25,17 +19,8 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
-
-import com.firebase.geofire.GeoFire;
-
-import com.firebase.geofire.GeoLocation;
-import com.firebase.geofire.GeoQuery;
-import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -44,26 +29,14 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.firebase.database.DatabaseReference;
+
 
 /*
  *
- *
  * Where Map is being shown and shows device location
- * Uses all the other classes to send notification via Firebase
- * Uses physics class to determine location of message and uses Geoquery
- * to determine the location of device.
- *
+ * Calls the GeoService Service class to make map workable
  *
  * Author: Safwan Ahman
  *
@@ -105,20 +78,15 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     }
 
-
     @Override
     public void onResume(){
         super.onResume();
-
-        //might not need to display location again and again
-        geoService.checkUnsendMessages(geoService.getCurrentLocationName());
-
     }
 
     @Override
     public void onPause(){
         super.onPause();
-
+       //geoService.startService(locationNames, this);
 
     }
     /**
@@ -147,6 +115,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng kia = new LatLng(4.981852, 114.953762);
         LatLng relentless = new LatLng(4.907545, 114.924353);
         LatLng ubd = new LatLng(4.972740, 114.893977);
+        LatLng airport = new LatLng(4.943832, 114.931770);
 
         locationNames.setPlaces("MCD", mDefaultLocation,  800,this, googleMap,"lets eat here");
         locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
@@ -158,7 +127,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         locationNames.setPlaces("HuaHo Manggis", huahomanggis, 70,this, googleMap,"buy BB's watch pls");
         locationNames.setPlaces("Relentless", relentless, 600, this, googleMap, "dance dance dannce");
         locationNames.setPlaces("Ubd", ubd, 800, this, googleMap, "University Brunei Darussalam");
-
+        locationNames.setPlaces("Airport", airport, 800, this, googleMap, "Brunei International Airport");
 
         Log.d("CHECK LOCATION SIZE: ", Integer.toString(locationNames.getSize()));
 
@@ -182,11 +151,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                                     mCurrent.remove();
                                 }
                                 mCurrent = mMap.addMarker(new MarkerOptions()
-                                .position(new LatLng(location.getLatitude(), location.getLongitude()))
-                                .title("You"));
+                                        .position(new LatLng(location.getLatitude(), location.getLongitude()))
+                                        .title("You"));
                                 LatLng coord = new LatLng(location.getLatitude(), location.getLongitude());
-
-                                Log.d("ARIANAGRANDE" , Double.toString(coord.latitude)  + " , " + Double.toString(coord.longitude));
 
                                 CameraUpdate camLocation = CameraUpdateFactory.newLatLngZoom(coord, 15);
                                 mMap.animateCamera(camLocation);
@@ -194,7 +161,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                         });
                     }
                 }break;
-
         }
     }
 
@@ -210,29 +176,39 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         bindService(i, mConnection, 0);
     }
 
-
-
     @Override
     protected void onStop() {
         super.onStop();
         Log.d("onSTOP", Boolean.toString(geoService.isServiceRunning()));
 
-
         if (serviceBound) {
             // If a timer is active, foreground the service, otherwise kill the service
             if (geoService.isServiceRunning()) {
-//                geoService.foreground();
-
-                Log.d("CHECK SERVICE", Boolean.toString(geoService.isServiceRunning()));
+               geoService.foreground();
 
             } else {
+               Log.d("SERVICESTOPPED", "Service has stopped. Oof ");
+                //so if service stops, start service again
+                //need to double check on the function call on this one
                stopService(new Intent(this, GeoService.class));
-                // Unbind the service
-                unbindService(mConnection);
-                serviceBound = false;
-            }
 
+                Log.d("SERVICESTOPPED", "SERVICE IS RESTARTING ");
+
+            }
         }
+
+        // Unbind the service
+        unbindService(mConnection);
+        serviceBound = false;
+    }
+
+    protected void onDestroy(){
+        super.onDestroy();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            geoService.stopService();//true will remove notification
+        }
+
     }
 
     /**
@@ -249,7 +225,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             geoService = binder.getService();
             serviceBound = true;
             // Ensure the service is not in the foreground when bound
-            geoService.background();     //remove for testing purposes
+            geoService.background();
             setUpdateLocation();
             SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
@@ -263,6 +239,9 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 Log.v(TAG, "Service disconnect");
             }
             serviceBound = false;
+
+            Log.d("DISCONNECT", "Service disconnect");
+
         }
     };
 
@@ -314,18 +293,15 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                     LatLng coord = new LatLng(location.getLatitude(), location.getLongitude());
 
                     Log.d("ARIANAGRANDE" , Double.toString(coord.latitude)  + " , " + Double.toString(coord.longitude));
+                    Log.d("CURRENTLOCATION" , geoService.getCurrentLocationName());
+
                     CameraUpdate camLocation = CameraUpdateFactory.newLatLngZoom(coord, 15);
                     mMap.animateCamera(camLocation);
                 }
               });
-
-
         }
     }
 
-
-
-    //maybbe should be put in the GeoService class?
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -333,10 +309,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             namePlace = intent.getStringExtra("place");
             msgTitle = intent.getStringExtra("title");
             msgBody = intent.getStringExtra("body");
-
-            //for testing purposes
-            Log.d("SENDMESSAGETO: ", geoService.getCurrentLocationName());
-            Log.d("CHECK ISINRADIUUS: ", Boolean.toString(geoService.getIsInRadius()));
 
             //Need to check if messages receive is null
             if(msgTitle == null){
@@ -355,26 +327,25 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 //if there is a messsage that is being received but it is not in a radius
                 //that it can receieved then it will be put in here
 
-                //max size is 5 //currently NOT properly working..why
-                if(geoService.getUnsendMessagesList().size() >= 5){
+                //always adding it TWO times. Reason: Unknown tbfh kmaksmdaslmdsa fml
+                //maybe always receiving messages twice. Just add the first one instead. (the odd number always taken)
+                if(geoService.getUnsendMessagesList().size() <= 20) {
+                    geoService.getUnsendMessagesList().add(new Messages(msgTitle, msgBody, namePlace));
                     Log.d("MSGSIZE: ", "unsendmsgsize is " + Integer.toString(geoService.getUnsendMessagesList().size()));
-                    geoService.getUnsendMessagesList().remove(0);   //removes first element in the list. Should be FIFO
-                    geoService.getUnsendMessagesList().add(new Messages(msgTitle,msgBody,namePlace));
-
-                }else if(geoService.getUnsendMessagesList().size() <= 0) {
-                    geoService.getUnsendMessagesList().add(new Messages(msgTitle, msgBody, namePlace));
-
-                }else if(geoService.getUnsendMessagesList().size() > 0  && geoService.getUnsendMessagesList().size() < 5) {
-                    geoService.getUnsendMessagesList().add(new Messages(msgTitle, msgBody, namePlace));
                 }
-
-                    geoService.checkUnsendMessages(geoService.getCurrentLocationName());
             }
+
+            for(int i = 0; i < geoService.getUnsendMessagesList().size(); i = i + 2){
+                Log.d("GEOUNSEND", Integer.toString(i));
+                Log.d("GEOUNSEND", Integer.toString(i) + ". " + geoService.getUnsendMessagesList().get(i).getTitle());
+                Log.d("GEOUNSEND", Integer.toString(i) + ". " + geoService.getUnsendMessagesList().get(i).getPlace());
+                Log.d("GEOUNSEND", Integer.toString(i) + ". " + geoService.getUnsendMessagesList().get(i).getBody());
+            }
+
+            Log.d("GEOUNSEND", "---=======================================----=======================---===================---");
 
             Log.d(TAG, msgBody);
         }
     };
-
-
 
 }

@@ -4,7 +4,13 @@ import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 
-
+/*
+* This class handles the checking of distance between devices and location of sent messages
+* Most used is the Haversine class
+*
+* Author: Safwan Ahman
+*
+* */
 public class Physics {
 
     public Physics(){}

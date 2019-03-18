@@ -1,34 +1,37 @@
 package com.example.cloudmessagetutorial;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
+
 import android.content.Intent;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.firebase.jobdispatcher.FirebaseJobDispatcher;
 import com.firebase.jobdispatcher.GooglePlayDriver;
 import com.firebase.jobdispatcher.Job;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import com.example.cloudmessagetutorial.MapsActivity;
-
 import static android.content.ContentValues.TAG;
+
+/*
+*
+* Handles incoming meesages from FCM
+* Sends data from MyService to Maps Activity using Broadcast
+*
+* Author: Safwan Ahman
+*
+* */
 
 public class MyService extends FirebaseMessagingService {
     public MyService() {
+
     }
+
+
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -40,6 +43,20 @@ public class MyService extends FirebaseMessagingService {
         // TODO(developer): Handle FCM messages here.
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage.getFrom());
+
+        /*
+        // Check if message contains a data payload.
+        if (remoteMessage.getNotification().getBody() != null) {
+
+            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+            bundle.putString("valueName", remoteMessage.getData().get("body"));
+            intent.putExtra("body", remoteMessage.getData().get("body"));
+            intent.putExtra("title", remoteMessage.getData().get("title"));
+            intent.putExtra("place", remoteMessage.getData().get("place"));
+
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        }*/
+
 
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
