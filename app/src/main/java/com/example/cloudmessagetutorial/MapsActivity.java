@@ -17,6 +17,8 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -52,8 +54,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private GeoService geoService = new GeoService();
     private boolean serviceBound;
 
-    private LatLng mDefaultLocation = new LatLng(4.965173, 114.951696);
-
     private String msgTitle;
     private String msgBody;
     private String namePlace;
@@ -74,14 +74,10 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         mapFragment.getMapAsync(this);
 
         //initialized location names here
-        locationNames = new LocationNames();
+        //locationNames = new LocationNames();
 
     }
 
-    @Override
-    public void onResume(){
-        super.onResume();
-    }
 
     @Override
     public void onPause(){
@@ -116,23 +112,31 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng relentless = new LatLng(4.907545, 114.924353);
         LatLng ubd = new LatLng(4.972740, 114.893977);
         LatLng airport = new LatLng(4.943832, 114.931770);
+        LatLng mcd = new LatLng(4.965173, 114.951696);
 
-        locationNames.setPlaces("MCD", mDefaultLocation,  800,this, googleMap,"lets eat here");
-        locationNames.setPlaces("673 Jerudong", crossfit,70, this, googleMap, "I gym here");
-        locationNames.setPlaces("House", house, 70,this, googleMap,"my house");
-        locationNames.setPlaces("Giant", giant, 300,this,googleMap,"We are meeting at Jolibee");
-        locationNames.setPlaces("Pizza", pizza, 400,this,googleMap,"Lets eat Pizza");
-        locationNames.setPlaces("Haz", haz, 300,this,googleMap,"My second gym is here");
-        locationNames.setPlaces("KIA", kia, 400,this, googleMap,"Car broom broom");
-        locationNames.setPlaces("HuaHo Manggis", huahomanggis, 70,this, googleMap,"buy BB's watch pls");
-        locationNames.setPlaces("Relentless", relentless, 600, this, googleMap, "dance dance dannce");
-        locationNames.setPlaces("Ubd", ubd, 800, this, googleMap, "University Brunei Darussalam");
-        locationNames.setPlaces("Airport", airport, 800, this, googleMap, "Brunei International Airport");
 
-        Log.d("CHECK LOCATION SIZE: ", Integer.toString(locationNames.getSize()));
+        geoService.addGeofence("MCD", mcd,  800, googleMap,"lets eat here");
+        geoService.addGeofence("673 Jerudong", crossfit,70, googleMap, "I gym here");
+        geoService.addGeofence("House", house, 70, googleMap,"my house");
+        geoService.addGeofence("Giant", giant, 300,googleMap,"We are meeting at Jolibee");
+        geoService.addGeofence("Pizza", pizza, 400,googleMap,"Lets eat Pizza");
+        geoService.addGeofence("Haz", haz, 300,googleMap,"My second gym is here");
+        geoService.addGeofence("KIA", kia, 400, googleMap,"Car broom broom");
+        geoService.addGeofence("HuaHo Manggis", huahomanggis, 70, googleMap,"buy BB's watch pls");
+        geoService.addGeofence("Relentless", relentless, 600,  googleMap, "dance dance dannce");
+        geoService.addGeofence("Ubd", ubd, 800, googleMap, "University Brunei Darussalam");
+        geoService.addGeofence("Airport", airport, 800,  googleMap, "Brunei International Airport");
+
+        Log.d("CHECK LOCATION SIZE: ", Integer.toString(geoService.getLocationNames().getSize()));
+
+        Button button2 = (Button) findViewById(R.id.startbutton);
+        button2.setEnabled(false);
+
+        Button button1 = (Button) findViewById(R.id.stopbutton);
+        button1.setEnabled(true);
 
         //only place where it should be
-        geoService.startService(locationNames, MapsActivity.this);
+        geoService.startService(geoService.getLocationNames(), MapsActivity.this);
     }
 
     @Override
@@ -164,7 +168,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         }
     }
 
-
     @Override
     protected void onStart(){
         super.onStart();
@@ -188,6 +191,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
             } else {
                Log.d("SERVICESTOPPED", "Service has stopped. Oof ");
+               geoService.sendNotification("SERVICE STOPPED", "SERVICE HAS STOPPED");
+
                 //so if service stops, start service again
                 //need to double check on the function call on this one
                stopService(new Intent(this, GeoService.class));
@@ -320,7 +325,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             }
 
             //loop through all name place to see if it matches
-            if(geoService.getIsInRadius() && namePlace.equals(geoService.getCurrentLocationName())) {
+            if(geoService.getIsInRadius() && namePlace.equals(geoService.getCurrentLocationName()) && geoService.isServiceRunning()) {
                 geoService.sendNotification(msgTitle, msgBody);
 
             }else{
@@ -348,4 +353,45 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         }
     };
 
-}
+    public void sendStop(View view){
+        geoService.stopService();
+
+        geoService.getLocationNames().clearMarker();
+        geoService.resetIndex();
+
+        if(geoService.getLocationNames()!= null){
+            geoService.getLocationNames().clear();
+        }
+
+        Button button1 = (Button) findViewById(R.id.stopbutton);
+        button1.setEnabled(false);
+
+        Button button2 = (Button) findViewById(R.id.startbutton);
+        button2.setEnabled(true);
+
+        stopService(new Intent(this, GeoService.class));
+
+
+    }
+
+    public void sendStart(View view){
+        onMapReady(mMap);
+        Button button = (Button) findViewById(R.id.stopbutton);
+        button.setEnabled(true);
+
+        Button button2 = (Button) findViewById(R.id.startbutton);
+        button2.setEnabled(false);
+
+        Intent i = new Intent(this, GeoService.class);
+        startService(i);
+        bindService(i, mConnection, 0);
+        geoService.startService(locationNames,this);
+
+
+
+    }
+
+
+
+
+    }

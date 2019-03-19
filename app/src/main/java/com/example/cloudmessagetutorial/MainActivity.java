@@ -4,6 +4,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import com.example.cloudmessagetutorial.MyService;
 
+
+//a test class for all the UI function
 public class MainActivity extends AppCompatActivity {
 
     @Override

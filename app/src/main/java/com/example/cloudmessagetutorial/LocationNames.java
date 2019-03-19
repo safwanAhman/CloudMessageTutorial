@@ -36,6 +36,7 @@ public class LocationNames {
     private double radius = 50; //50 is the default set radius
     private Marker myMarker;
 
+    private GoogleMap mMap;
     private String defaultPlace;
 
     public LocationNames(){}
@@ -57,36 +58,18 @@ public class LocationNames {
             }
 
 
-            placesList.add(new Places(name, latLng,radius));
+            placesList.add(new Places(name, latLng,radius, text));
 
-            googleMap.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title(name)
-                    .snippet(text)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+            addMarkerToMap(name, latLng, radius, context, googleMap, text);
 
-            googleMap.addCircle(new CircleOptions()
-                    .center(latLng)
-                    .radius(radius)//is in meter
-                    .strokeColor(Color.BLUE)
-                    .fillColor(0x222000FF)
-                    .strokeWidth(5.0f));
         }else{
-            placesList.add(new Places(name, latLng,radius));
+            placesList.add(new Places(name, latLng,radius, text));
 
-            googleMap.addMarker(new MarkerOptions()
-                    .position(latLng)
-                    .title(name)
-                    .snippet(text)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+            addMarkerToMap(name, latLng, radius, context, googleMap, text);
 
-            googleMap.addCircle(new CircleOptions()
-                    .center(latLng)
-                    .radius(radius)//is in meter
-                    .strokeColor(Color.BLUE)
-                    .fillColor(0x222000FF)
-                    .strokeWidth(5.0f));
         }
+
+        mMap = googleMap;
 
     }
 
@@ -154,5 +137,35 @@ public class LocationNames {
 
     public List<Places> getPlacesList(){
         return placesList;
+    }
+
+    public void clear() {
+
+      placesList.clear();
+      mMap.clear();
+
+
+    }
+
+    public void addMarkerToMap(String name, LatLng latLng, double radius, Context context, GoogleMap googleMap, String text){
+
+
+        googleMap.addMarker(new MarkerOptions()
+                .position(latLng)
+                .title(name)
+                .snippet(text)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+        googleMap.addCircle(new CircleOptions()
+                .center(latLng)
+                .radius(radius)//is in meter
+                .strokeColor(Color.BLUE)
+                .fillColor(0x222000FF)
+                .strokeWidth(5.0f));
+
+    }
+
+    public void clearMarker(){
+        mMap.clear();
     }
 }

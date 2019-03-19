@@ -33,15 +33,14 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -89,14 +88,22 @@ GoogleApiClient.OnConnectionFailedListener,
 
     private List<Messages> unsendMessagesList = new ArrayList<>();
 
-    private List<GeoQuery> geoQueriesList;// = new ArrayList<>();
+    private List<GeoQuery> geoQueriesList;
 
-    private List<LocationNames> locationTest = new ArrayList<>();
+    private LocationNames locationNames = new LocationNames();
 
+    private List<DatabaseReference> index = new ArrayList<>();
+
+    private int geoIndex;
 
     private boolean serviceRunning = false;
 
     private final IBinder serviceBinder = new RunServiceBinder();
+
+    //testing for inserting location name
+    private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+    private DatabaseReference l = databaseReference.child("GEOFECNCE PLACE/");
+
 
     public boolean isServiceRunning() {
         return serviceRunning;
@@ -109,6 +116,7 @@ GoogleApiClient.OnConnectionFailedListener,
     }
 
     public GeoService() {
+        geoIndex = 0;
     }
 
     @Override
@@ -127,7 +135,7 @@ GoogleApiClient.OnConnectionFailedListener,
                             return;
                         }
 
-                        // Get new Instance ID token
+                        // Get new Instance geoIndex token
                         String token = task.getResult().getToken();
 
                         // Log and toast
@@ -145,32 +153,6 @@ GoogleApiClient.OnConnectionFailedListener,
          //give update on live location.
         ref = FirebaseDatabase.getInstance().getReference("MyLocation");
 
-        /**
-        //testing for inserting location name
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-        DatabaseReference l = databaseReference.child("location/");
-        DatabaseReference ll = l.child("Index");
-        final DatabaseReference name = ll.child("Location Name");
-        final DatabaseReference lat = ll.child("Location Lat");
-        final DatabaseReference lng = ll.child("Location Lng");
-
-        lat.setValue(4.965173);
-        lng.setValue(114.951696);
-
-        name.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                name.setValue("House");
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-        lat.setValue(4.899541);
-        lng.setValue(114.849591);
-            **/
          Log.d(TAG, "Subscribed to Virtual Brunei topic");
          geoFire = new GeoFire(ref);
          geoQueriesList = new ArrayList<>();
@@ -204,13 +186,9 @@ GoogleApiClient.OnConnectionFailedListener,
 
         }
 
-
-       // GeoLocation l = new GeoLocation(location.getLatitude(), location.getLongitude());
-
         //new function hopefully updates to trigger the geoqueries
         for(int i = 0; i < geoQueriesList.size(); i++){
             geoQueriesList.get(i).setCenter(geoQueriesList.get(i).getCenter());
-          //   geoQueriesList.get(i).setCenter(l);
 
         }
 
@@ -265,6 +243,8 @@ GoogleApiClient.OnConnectionFailedListener,
                     geoQueriesList.get(i).removeAllListeners();
                 }
             }
+
+
         }else{
             Log.e(TAG, "STOP TIMER FOR A TIMER THAT IS NOT RUNNING");
         }
@@ -296,6 +276,7 @@ GoogleApiClient.OnConnectionFailedListener,
         GeoQueryEventListener listener = new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
+
                 isInRadius = true;
 
                 LatLng device = new LatLng(location.latitude, location.longitude);
@@ -312,6 +293,9 @@ GoogleApiClient.OnConnectionFailedListener,
                         Log.d("3. places DISTANCE: ", Double.toString(distance));
 
                         currentLocationName = me;
+
+                        sendNotification("ENTERED", "YOU HAVE ENTERED: " + currentLocationName.toUpperCase());
+
                         checkUnsendMessages(currentLocationName);
 
                     }
@@ -319,8 +303,6 @@ GoogleApiClient.OnConnectionFailedListener,
                 }
 
                 checkUnsendMessages(currentLocationName);
-
-              //  Log.d("LOCATIONENETER", "LOCATION CHANGED TO" + Double.toString(location.latitude) + ", " + Double.toString(location.longitude));
                 Toast.makeText(context , "LOCATION ENTERED: " + currentLocationName, Toast.LENGTH_SHORT).show();
 
             }
@@ -330,7 +312,7 @@ GoogleApiClient.OnConnectionFailedListener,
                 // Log and toast
                 //to check when it is triggered
                 Toast.makeText(context, "LOCATION EXIT", Toast.LENGTH_SHORT).show();
-                sendNotification("EXITED", "YOU HAVE EXITED A LOCATION");
+                sendNotification("EXITED", "YOU HAVE EXITED: " + currentLocationName.toUpperCase());
                 isInRadius = false;
                 currentLocationName = "";
 
@@ -428,7 +410,8 @@ GoogleApiClient.OnConnectionFailedListener,
                 .setPriority(Notification.PRIORITY_HIGH);
 
         Intent resultIntent = new Intent(this, MapsActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,resultIntent,
+        Intent t = new Intent();  //for testing purposes
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,t,
                 PendingIntent.FLAG_UPDATE_CURRENT);
         builder.setContentIntent(pendingIntent);
 
@@ -609,7 +592,57 @@ GoogleApiClient.OnConnectionFailedListener,
         return currentLocationName;
     }
 
-    private void addToDB(String id, String name){
+    //to add geofence to databse but to remove it? sES idek
+    public void addGeofence(String place, LatLng location, double radius, GoogleMap googleMap, String text){
+
+        boolean t = false;
+
+        if(locationNames.getSize() > 0){
+            //go through all the list
+            for(int i = 0; i < locationNames.getSize(); i++) {
+                //check for duplicates
+                if(locationNames.getPlacesList().get(i).getName().equals(place)){
+                  t = true;
+                }
+            }
+        }
+
+        if(!t){
+            add(place, location, radius, googleMap, text);
+            geoIndex++;
+        }
+    }
+
+    private  void add(String place, LatLng location, double radius, GoogleMap googleMap, String text){
+        index.add(l.child(Integer.toString(geoIndex)));
+       // index.get(geoIndex).child("GEOFECNCE PLACE");
+
+        final DatabaseReference name = index.get(geoIndex).child("Location name");
+        final DatabaseReference lat = index.get(geoIndex).child("Location Lat");
+        final DatabaseReference lng = index.get(geoIndex).child("Location Lng");
+        final DatabaseReference r = index.get(geoIndex).child("Radius");
+
+        locationNames.setPlaces(place, location, radius, this, googleMap, text);
+
+        name.setValue(place);
+        lat.setValue(location.latitude);
+        lng.setValue(location.longitude);
+        r.setValue(radius);
+    }
+
+    public LocationNames getLocationNames(){
+       // geoIndex = 0;
+        return locationNames;
+    }
+
+    public void resetIndex(){
+        geoIndex = 0;
+    }
+
+    public void notActive(){
+        locationNames.clear();
+
 
     }
+
 }

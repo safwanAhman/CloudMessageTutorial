@@ -3,5 +3,6 @@
     <string name="default_notification_channel_id">0</string>
     <string name="title_activity_maps">Map</string>
     <string name="msg_token_fmt">TOKEN ASS BITCH %s</string>
-
+    <string name="stop_button">Stop Service</string>
+    <string name="start_button">Start Service</string>
 </resources>

@@ -14,11 +14,19 @@ public class Places {
         this.radius = radius;
     }
 
+
+    public Places(String name, LatLng latLng, double radius, String text){
+        this.name = name;
+        this.latLng = latLng;
+        this.radius = radius;
+        this.text = text;
+    }
+
     private Map<String, LatLng> places = new HashMap<>();
     private String name;
     private LatLng latLng;
     private double radius;
-
+    private String text;
 
     public void setName(String s){
         name = s;
@@ -42,5 +50,9 @@ public class Places {
 
     public double getRadius() {
         return radius;
+    }
+
+    public String getText() {
+        return text;
     }
 }
