@@ -391,7 +391,4 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     }
 
-
-
-
     }

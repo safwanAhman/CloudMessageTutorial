@@ -52,7 +52,6 @@ public class LocationNames {
         if(placesList.size() >0){
             for(int count = 0; count < placesList.size(); count++){
                 if(placesList.get(count).getName().equals(name)){
-                  //  Toast.makeText(context, "Name of places taken", Toast.LENGTH_LONG).show();
                     return;
                 }
             }

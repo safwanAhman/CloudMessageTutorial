@@ -38,9 +38,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -398,6 +400,7 @@ GoogleApiClient.OnConnectionFailedListener,
         count++;
         Log.d("RUNNING: ", "SERVICE IS RUNNING THIS MANY TIMES " + Integer.toString(count) );
 
+        readDatabase();
         checkUnsendMessages(currentLocationName);
     }
 
@@ -592,7 +595,7 @@ GoogleApiClient.OnConnectionFailedListener,
         return currentLocationName;
     }
 
-    //to add geofence to databse but to remove it? sES idek
+    //to addToDB geofence to databse but to remove it? sES idek
     public void addGeofence(String place, LatLng location, double radius, GoogleMap googleMap, String text){
 
         boolean t = false;
@@ -608,12 +611,13 @@ GoogleApiClient.OnConnectionFailedListener,
         }
 
         if(!t){
-            add(place, location, radius, googleMap, text);
+            addToDB(place, location, radius, googleMap, text);
             geoIndex++;
         }
     }
 
-    private  void add(String place, LatLng location, double radius, GoogleMap googleMap, String text){
+    //need to edit this function to make the primary key to be the Name of the place
+    private  void addToDB(String place, LatLng location, double radius, GoogleMap googleMap, String text){
         index.add(l.child(Integer.toString(geoIndex)));
        // index.get(geoIndex).child("GEOFECNCE PLACE");
 
@@ -639,10 +643,46 @@ GoogleApiClient.OnConnectionFailedListener,
         geoIndex = 0;
     }
 
-    public void notActive(){
-        locationNames.clear();
 
+    public void readDatabase(){
+
+        final DatabaseReference from =  FirebaseDatabase.getInstance().getReference("GEOFECNCE PLACE/");
+
+        from.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+               // Log.d("DB " ," "+dataSnapshot.getChildrenCount());
+               // Log.d("DB ", " " + dataSnapshot.getValue());
+
+                for(DataSnapshot childDataSnapshot: dataSnapshot.getChildren()){
+
+                    Log.d("DB ",""+ childDataSnapshot.getKey()); //displays the key for the node
+                    String name = childDataSnapshot.child("Location name").getValue().toString();
+                    String lat = childDataSnapshot.child("Location Lat").getValue().toString();
+                    String lng = childDataSnapshot.child("Location Lng").getValue().toString();
+                    String r = childDataSnapshot.child("Radius").getValue().toString();
+
+                    Places places = childDataSnapshot.getValue(Places.class);
+                    Log.d("DB NAME",""+ name);
+                    Log.d("DB LAT",""+ lat);
+                    Log.d("DB LNG",""+ lng);
+                    Log.d("DB RADIUS",""+ r);
+
+                    LatLng latLng = new LatLng(Double.parseDouble(lat) , Double.parseDouble(lng));
+                    int radius = Integer.parseInt(r);
+
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.e("The read failed: " ,"OOPS");
+
+            }
+        });
 
     }
+
 
 }
