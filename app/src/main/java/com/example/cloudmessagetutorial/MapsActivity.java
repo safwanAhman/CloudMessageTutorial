@@ -115,6 +115,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LatLng mcd = new LatLng(4.965173, 114.951696);
 
 
+        //need to be a UI instead
         geoService.addGeofence("MCD", mcd,  800, googleMap,"lets eat here");
         geoService.addGeofence("673 Jerudong", crossfit,70, googleMap, "I gym here");
         geoService.addGeofence("House", house, 70, googleMap,"my house");
