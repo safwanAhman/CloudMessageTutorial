@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -16,9 +17,12 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -33,6 +37,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import com.google.firebase.database.DatabaseReference;
+
+import java.util.regex.Pattern;
 
 
 /*
@@ -58,10 +64,13 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private String msgBody;
     private String namePlace;
 
+    private EditText editText;
+    private boolean matches;
+    private String split[];
+
     private Marker mCurrent;
     private DatabaseReference ref;
     private final String TAG = "VB LOG TEXT";
-    private LocationNames locationNames;
 
 
     @Override
@@ -73,8 +82,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        //initialized location names here
-        //locationNames = new LocationNames();
 
     }
 
@@ -82,7 +89,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     @Override
     public void onPause(){
         super.onPause();
-       //geoService.startService(locationNames, this);
 
     }
     /**
@@ -101,34 +107,11 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter("IntentKey"));
 
+        geoService.setMap(googleMap);
+        geoService.setContext(this);
+        geoService.readDatabase();
 
-        LatLng crossfit = new LatLng(4.930940, 114.840726);
-        LatLng house = new LatLng(4.899541, 114.849591);
-        LatLng huahomanggis = new LatLng(4.947292, 114.960772);
-        LatLng giant = new LatLng(4.952149, 114.907406);
-        LatLng pizza = new LatLng(4.901201, 114.901684);
-        LatLng haz = new LatLng(4.917353, 114.911082);
-        LatLng kia = new LatLng(4.981852, 114.953762);
-        LatLng relentless = new LatLng(4.907545, 114.924353);
-        LatLng ubd = new LatLng(4.972740, 114.893977);
-        LatLng airport = new LatLng(4.943832, 114.931770);
-        LatLng mcd = new LatLng(4.965173, 114.951696);
-
-
-        //need to be a UI instead
-        geoService.addGeofence("MCD", mcd,  800, googleMap,"lets eat here");
-        geoService.addGeofence("673 Jerudong", crossfit,70, googleMap, "I gym here");
-        geoService.addGeofence("House", house, 70, googleMap,"my house");
-        geoService.addGeofence("Giant", giant, 300,googleMap,"We are meeting at Jolibee");
-        geoService.addGeofence("Pizza", pizza, 400,googleMap,"Lets eat Pizza");
-        geoService.addGeofence("Haz", haz, 300,googleMap,"My second gym is here");
-        geoService.addGeofence("KIA", kia, 400, googleMap,"Car broom broom");
-        geoService.addGeofence("HuaHo Manggis", huahomanggis, 70, googleMap,"buy BB's watch pls");
-        geoService.addGeofence("Relentless", relentless, 600,  googleMap, "dance dance dannce");
-        geoService.addGeofence("Ubd", ubd, 800, googleMap, "University Brunei Darussalam");
-        geoService.addGeofence("Airport", airport, 800,  googleMap, "Brunei International Airport");
-
-        Log.d("CHECK LOCATION SIZE: ", Integer.toString(geoService.getLocationNames().getSize()));
+        //Log.d("CHECK LOCATION SIZE: ", Integer.toString(geoService.getLocationNames().getSize()));
 
         Button button2 = (Button) findViewById(R.id.startbutton);
         button2.setEnabled(false);
@@ -136,8 +119,10 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         Button button1 = (Button) findViewById(R.id.stopbutton);
         button1.setEnabled(true);
 
+
+
         //only place where it should be
-        geoService.startService(geoService.getLocationNames(), MapsActivity.this);
+        geoService.startService(MapsActivity.this);
     }
 
     @Override
@@ -357,11 +342,11 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     public void sendStop(View view){
         geoService.stopService();
 
-        geoService.getLocationNames().clearMarker();
-        geoService.resetIndex();
 
-        if(geoService.getLocationNames()!= null){
+        if(geoService.getLocationNames().getSize() > 0){
             geoService.getLocationNames().clear();
+            geoService.getLocationNames().clearMarker();
+
         }
 
         Button button1 = (Button) findViewById(R.id.stopbutton);
@@ -386,10 +371,95 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         Intent i = new Intent(this, GeoService.class);
         startService(i);
         bindService(i, mConnection, 0);
-        geoService.startService(locationNames,this);
-
-
+        geoService.startService(this);
 
     }
+
+    public void testButton(View view){
+
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
+
+    }
+
+        public void press(View view){
+          editText = (EditText) findViewById(R.id.latlng);
+
+            //this pattern is a regex for lat and lng
+            matches = Pattern.matches("^[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?)([\\s*]?),\\s*[-+]?(180(\\.0+)?|((1[0-7]\\d)|([1-9]?\\d))(\\.\\d+)?)$"
+                    , editText.getText().toString());
+
+            if(matches) {
+                popup2();
+            }else
+                Toast.makeText(this, "Value entered is not a LatLng, please enter correct LatLng", Toast.LENGTH_LONG).show();
+
+
+        }
+
+        private void popup2() {
+            //splitting the given latlng into lat and lng
+            split = editText.getText().toString().split(",");
+
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+
+            Context context = this;
+            LinearLayout layout = new LinearLayout(context);
+            layout.setOrientation(LinearLayout.VERTICAL);
+
+            final EditText nameBox = new EditText(context);
+            nameBox.setHint("Name");
+            layout.addView(nameBox);
+
+            final EditText latBox = new EditText(context);
+            latBox.setHint("Latitude");
+            layout.addView(latBox);
+
+
+            final EditText  lngBox = new EditText(context);
+            lngBox.setHint("Longitude");
+            layout.addView(lngBox);
+
+            final EditText radiusBox = new EditText(context);
+            radiusBox.setHint("Radius");
+            layout.addView(radiusBox);
+
+            final EditText descriptionBox = new EditText(context);
+            descriptionBox.setHint("Description");
+            layout.addView(descriptionBox);
+
+            alertDialogBuilder.setView(layout);
+
+            latBox.setText(split[0]);
+            lngBox.setText(split[1]);
+
+            final LatLng latLng = new LatLng(Double.parseDouble(split[0]), Double.parseDouble(split[1]));
+
+
+            alertDialogBuilder.setCancelable(false).setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Toast.makeText(MapsActivity.this, "Added: " +  latBox.getText(), Toast.LENGTH_LONG).show();
+
+                    geoService.addGeofence(nameBox.getText().toString(),
+                            latLng,
+                            Double.parseDouble(radiusBox.getText().toString()),
+                            mMap,
+                            descriptionBox.getText().toString());
+
+                    geoService.addToDB(nameBox.getText().toString(),
+                            latLng,
+                            Double.parseDouble(radiusBox.getText().toString()),
+                            descriptionBox.getText().toString());
+
+                }
+            });
+
+            AlertDialog alertDialog = alertDialogBuilder.create();
+
+            alertDialog.show();
+
+        }
+
 
     }
