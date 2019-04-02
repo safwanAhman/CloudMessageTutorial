@@ -8,5 +8,6 @@
     <string name="start_button">Start Service</string>
     <string name="enter_latlng">Enter Latitude, Longitude</string>
     <string name="add_button">Add Geofence</string>
+    <string name="current_location_hint">Get Current Location</string>
 
 </resources>

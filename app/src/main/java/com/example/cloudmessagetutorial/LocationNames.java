@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -14,8 +15,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
 * This class is used to set location and latlng
@@ -30,14 +33,18 @@ import java.util.Map;
 * */
 public class LocationNames {
 
-    private Map<String, LatLng> places = new HashMap<>();
     private List<Places> placesList = new ArrayList<>();
+    private Set<Places> placesSet = new HashSet<>();
+
     private LatLng defaultLatLng;
     private double radius = 50; //50 is the default set radius
-    private Marker myMarker;
+
+    private int size = 0;
 
     private GoogleMap mMap;
     private String defaultPlace;
+
+    private boolean duplicate = false;
 
     public LocationNames(){}
 
@@ -49,24 +56,33 @@ public class LocationNames {
         //checks in the list of places already have the same name
         //if they do, do not add it into the list
         //else add to the list
-        if(placesList.size() >0){
+
+        if(placesSet.add(new Places(name, latLng,radius, text))){
+            addMarkerToMapTEST(name, latLng, radius, context, googleMap, text);
+            placesList.add(new Places(name, latLng,radius, text));
+            size++;
+            Log.d("ADDED: ", name + " " + size);
+        }
+
+
+        /**
+        if(placesList.size() >0 ){
             for(int count = 0; count < placesList.size(); count++){
                 if(placesList.get(count).getName().equals(name)){
-                    return;
+                   return;
                 }
             }
 
-
             placesList.add(new Places(name, latLng,radius, text));
+            addMarkerToMapTEST(name, latLng, radius, context, googleMap, text);
+            Log.d("ADDED: ", name);
 
-            addMarkerToMap(name, latLng, radius, context, googleMap, text);
-
-        }else{
+        }else if(placesList.size() <= 0){
             placesList.add(new Places(name, latLng,radius, text));
+            addMarkerToMapTEST(name, latLng, radius, context, googleMap, text);
+            Log.d("ADDED: ", name);
 
-            addMarkerToMap(name, latLng, radius, context, googleMap, text);
-
-        }
+        }**/
 
         mMap = googleMap;
 
@@ -116,9 +132,6 @@ public class LocationNames {
             return placesList.size();
     }
 
-    public Map<String, LatLng> getPlaces(){
-        return places;
-    }
 
     public double getRadius(String name){
         radius = 50;
@@ -134,6 +147,21 @@ public class LocationNames {
         return radius;
     }
 
+    public String getDescription(String name){
+        String des = "";
+
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    des = placesList.get(count).getText();
+                }
+            }
+        }
+
+        return des;
+
+    }
+
     public List<Places> getPlacesList(){
         return placesList;
     }
@@ -146,25 +174,95 @@ public class LocationNames {
 
     }
 
-    public void addMarkerToMap(String name, LatLng latLng, double radius, Context context, GoogleMap googleMap, String text){
 
+    public void addMarkerToMapTEST(String name, LatLng latLng, double radius, Context context, GoogleMap googleMap, String text){
 
-        googleMap.addMarker(new MarkerOptions()
+        MarkerOptions mm = new MarkerOptions()
                 .position(latLng)
                 .title(name)
                 .snippet(text)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
 
-        googleMap.addCircle(new CircleOptions()
+        CircleOptions cc = new CircleOptions()
                 .center(latLng)
                 .radius(radius)//is in meter
                 .strokeColor(Color.BLUE)
                 .fillColor(0x222000FF)
-                .strokeWidth(5.0f));
+                .strokeWidth(5.0f);
+
+        Marker marker = googleMap.addMarker(mm);
+        Circle circle = googleMap.addCircle(cc);
+
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    placesList.get(count).setMarker(marker);
+                    placesList.get(count).setCircle(circle);
+
+                }
+            }
+        }
 
     }
 
     public void clearMarker(){
-        mMap.clear();
+
+        if(mMap != null){
+          mMap.clear();
+        }
+    }
+
+    public void removeLocation(String name){
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    Log.d("NAME CIRCLE ", "RETURNING");
+
+                    if(getMarker(name) != null) {
+                        placesList.get(count).deleteMarker();
+
+                    }
+
+                    if(getCircle(name) != null){
+                        placesList.get(count).deleteCircle();
+
+                    }
+                    placesList.remove(count);
+                }
+            }
+        }
+    }
+
+    public Circle getCircle(String name){
+
+        Circle c = null;
+
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+                    Log.d("CIRCLE ", "RETURNING");
+
+                    c =  placesList.get(count).getCircle();
+                }
+            }
+        }
+
+        return c;
+    }
+
+    public Marker getMarker(String name){
+        Marker m = null;
+
+        if(placesList.size() > 0){
+            for(int count=0; count < placesList.size(); count++){
+                if(placesList.get(count).getName().equals(name)){
+
+                    Log.d("MARKER AND CIRCLE ", "RETURNING");
+                    m =  placesList.get(count).getMarker();
+                }
+            }
+        }
+
+        return m;
     }
 }

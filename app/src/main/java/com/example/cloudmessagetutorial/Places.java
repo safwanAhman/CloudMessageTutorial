@@ -1,6 +1,8 @@
 package com.example.cloudmessagetutorial;
 
+import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,9 @@ public class Places {
     private double radius;
     private String text;
 
+    private Marker marker;
+    private Circle circle;
+
     public void setName(String s){
         name = s;
     }
@@ -54,5 +59,31 @@ public class Places {
 
     public String getText() {
         return text;
+    }
+
+    public void setMarker(Marker m){
+        marker = m;
+    }
+
+    public Marker getMarker() {
+        return marker;
+    }
+
+    public void setCircle(Circle c){
+        circle = c;
+    }
+
+    public Circle getCircle(){
+        return circle;
+    }
+
+    public void deleteCircle(){
+        circle.remove();
+        circle = null;
+    }
+
+    public void deleteMarker(){
+        marker.remove();
+        marker = null;
     }
 }

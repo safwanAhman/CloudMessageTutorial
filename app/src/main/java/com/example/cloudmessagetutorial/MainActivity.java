@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 
 //a test class for all the UI function
+//should be deleted after mapactivity is done
 public class MainActivity extends AppCompatActivity {
 
     EditText editText;

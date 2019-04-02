@@ -13,8 +13,10 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -42,6 +44,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
@@ -49,7 +52,6 @@ import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 /*
 *
@@ -80,7 +82,6 @@ GoogleApiClient.OnConnectionFailedListener,
     private static int DISPLACEMENT = 10;
 
     int serviceCount =0;   //used for testing, to see how many times the service is being run
-
     private String currentLocationName = "";
 
     private DatabaseReference ref;
@@ -89,16 +90,12 @@ GoogleApiClient.OnConnectionFailedListener,
     private GeoFire geoFire;
 
     private List<Messages> unsendMessagesList = new ArrayList<>();
-
     private List<GeoQuery> geoQueriesList;
-
     private LocationNames locationNames = new LocationNames();
 
-    private List<DatabaseReference> index = new ArrayList<>();
-
-    private int geoIndex;
 
     private boolean serviceRunning = false;
+    private boolean deleting = false;
 
     private final IBinder serviceBinder = new RunServiceBinder();
 
@@ -108,8 +105,8 @@ GoogleApiClient.OnConnectionFailedListener,
 
     private GoogleMap mMap;
     private Context mContext;
-
     private GeoQueryEventListener listener;
+
 
     public boolean isServiceRunning() {
         return serviceRunning;
@@ -121,9 +118,6 @@ GoogleApiClient.OnConnectionFailedListener,
         }
     }
 
-    public GeoService() {
-        geoIndex = 0;
-    }
 
     @Override
     public void onCreate() {
@@ -140,7 +134,6 @@ GoogleApiClient.OnConnectionFailedListener,
                             Log.w(TAG, "getInstanceId failed", task.getException());
                             return;
                         }
-
                         // Get new Instance geoIndex token
                         String token = task.getResult().getToken();
 
@@ -148,7 +141,6 @@ GoogleApiClient.OnConnectionFailedListener,
                         String msg = getString(R.string.msg_token_fmt, token);
                         Log.d(TAG, msg);
                         //
-                        //Toast.makeText(MapsActivity.class, msg, Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -596,6 +588,7 @@ GoogleApiClient.OnConnectionFailedListener,
 
         }
 
+      // addToDB(place,  location,  radius,  text);
     }
 
     //add an error catch pls or else later payah
@@ -611,6 +604,13 @@ GoogleApiClient.OnConnectionFailedListener,
         lng.setValue(location.longitude);
         r.setValue(radius);
         des.setValue(text);
+
+        SystemClock.sleep(700);   //not sure if necessary
+
+
+        //GIVE TIME TO ADD IT TO THE DATABASE
+        //NEED TO DOUBLE CHECK ON ALL PHONE!
+
     }
 
     public LocationNames getLocationNames(){
@@ -621,33 +621,39 @@ GoogleApiClient.OnConnectionFailedListener,
 
         final DatabaseReference from =  FirebaseDatabase.getInstance().getReference(ok.getPath().toString());
 
+
         from.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                for(DataSnapshot childDataSnapshot: dataSnapshot.getChildren()){
+                locationNames.getPlacesList().clear();
+                locationNames.clearMarker();
 
-                    Log.d("DB ","=====================++========================="); //displays the key for the node
+
+                int c = 0;
+                for (DataSnapshot childDataSnapshot : dataSnapshot.getChildren()) {
+
+                    Log.d("DB ", "=====================++========================="); //displays the key for the node
                     String name = childDataSnapshot.getKey();
-                    String lat = childDataSnapshot.child("Lat").getValue().toString();
-                    String lng = childDataSnapshot.child("Lng").getValue().toString();  //error prone here need to check
-                    String r = childDataSnapshot.child("Radius").getValue().toString();
-                    String des = childDataSnapshot.child("Description").getValue().toString();
 
-                   // Places places = childDataSnapshot.getValue(Places.class);
-                    Log.d("DB NAME",""+ name);
-                    Log.d("DB LAT",""+ lat);
-                    Log.d("DB LNG",""+ lng);
-                    Log.d("DB RADIUS",""+ r);
+                    if (childDataSnapshot.child("Description").getValue() != null) {
+                        String des = childDataSnapshot.child("Description").getValue().toString();
+                        String lat = childDataSnapshot.child("Lat").getValue().toString();
+                        String lng = childDataSnapshot.child("Lng").getValue().toString();  //error prone here need to check
+                        String r = childDataSnapshot.child("Radius").getValue().toString();
 
-                    LatLng latLng = new LatLng(Double.parseDouble(lat) , Double.parseDouble(lng));
-                    int radius = Integer.parseInt(r);
+                        c++;
+                        // Places places = childDataSnapshot.getValue(Places.class);
+                        Log.d("DB NAME", "" + name + " " + c);
 
-                   addGeofence(name, latLng, radius, mMap, des);
+                        LatLng latLng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
+                        int radius = Integer.parseInt(r);
 
+                        addGeofence(name, latLng, radius, mMap, des);
+                    }
                 }
             }
-
+           // }
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
                 Log.e("The read failed: " ,"OOPS");
@@ -664,6 +670,37 @@ GoogleApiClient.OnConnectionFailedListener,
 
     public void setContext(Context context){
         mContext = context;
+    }
+
+    public void deleteFromDB(final String name){
+        Query query = ok.child(name);
+        query.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                for(DataSnapshot childDataSnapshot: dataSnapshot.getChildren()) {
+
+                    childDataSnapshot.getRef().removeValue();
+                    locationNames.removeLocation(name);
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                Log.e("The read failed: " ,"OOPS");
+
+            }
+        });
+
+    }
+
+    public void isDeleted(boolean t){
+        deleting = t;
+    }
+
+    public boolean getIsItDeleted(){
+        return deleting;
     }
 
 }
