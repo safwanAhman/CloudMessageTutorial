@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     public void press(View view){
         editText = (EditText) findViewById(R.id.latlng);
 
-        //this pattern is a regex for lat and lng
+        //this pattern is a regex for lat and ln
         matches = Pattern.matches("^[-+]?([1-8]?\\d(\\.\\d+)?|90(\\.0+)?)([\\s*]?),\\s*[-+]?(180(\\.0+)?|((1[0-7]\\d)|([1-9]?\\d))(\\.\\d+)?)$"
                 , editText.getText().toString());
 
