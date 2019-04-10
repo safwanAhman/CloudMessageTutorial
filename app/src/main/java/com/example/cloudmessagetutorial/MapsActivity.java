@@ -81,6 +81,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     private final String TAG = "VB LOG TEXT";
 
     boolean added = false;
+    private SendNotification sendNotification = new SendNotification(this);
 
     private String defaultparmeter = "";
 
@@ -185,7 +186,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
             } else {
                Log.d("SERVICESTOPPED", "Service has stopped. Oof ");
-               geoService.sendNotification("SERVICE STOPPED", "SERVICE HAS STOPPED");
+               sendNotification.sendNotification("SERVICE STOPPED", "SERVICE HAS STOPPED");
 
                 //so if service stops, start service again
                 //need to double check on the function call on this one
@@ -320,7 +321,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
             //loop through all name place to see if it matches
             if(geoService.getIsInRadius() && namePlace.equals(geoService.getCurrentLocationName()) && geoService.isServiceRunning()) {
-                geoService.sendNotification(msgTitle, msgBody);
+                sendNotification.sendNotification(msgTitle, msgBody);
 
             }else{
                 //if there is a messsage that is being received but it is not in a radius

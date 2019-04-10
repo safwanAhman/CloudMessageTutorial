@@ -55,11 +55,9 @@ import java.util.List;
 
 /*
 *
-*
 * Where the background service for the MapActivity mainly works
 * Here is where the notifications are being sent
 * Also where GeoQuery is being handled and also updates the current location to the firebase database
-*
 *
 * Author: Safwan Ahman
 *
@@ -95,7 +93,6 @@ GoogleApiClient.OnConnectionFailedListener,
 
 
     private boolean serviceRunning = false;
-    private boolean deleting = false;
 
     private final IBinder serviceBinder = new RunServiceBinder();
 
@@ -107,6 +104,7 @@ GoogleApiClient.OnConnectionFailedListener,
     private Context mContext;
     private GeoQueryEventListener listener;
 
+    private SendNotification sendNotification; //
 
     public boolean isServiceRunning() {
         return serviceRunning;
@@ -250,7 +248,7 @@ GoogleApiClient.OnConnectionFailedListener,
 
 
     public void foreground(){
-        startForeground(NOTIFICATION_ID,createNotification());
+        startForeground(NOTIFICATION_ID,sendNotification.createNotification());
     }
 
     public void background(){
@@ -273,36 +271,21 @@ GoogleApiClient.OnConnectionFailedListener,
 
         }
 
+        if(geoQueriesList !=null){
+            for(int i=0; i < geoQueriesList.size(); i++){
+                geoQueriesList.get(i).removeAllListeners();
+            }
+        }
+
+
         //handling events when device enters a location
         listener = new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
 
                 isInRadius = true;
-
-                LatLng device = new LatLng(location.latitude, location.longitude);
-
-                for(int i= 0; i < locationNames.getSize(); i++){
-                    String me = locationNames.getPlacesList().get(i).getName();
-                    LatLng checkAgainst = locationNames.getLatLng(locationNames.getPlacesList().get(i).getName());
-                    double distance = Physics.haversine(device, checkAgainst);
-
-                    //assuming the device's radius is 1km
-                    if(Physics.isInArea(0.1, (locationNames.getRadius(me)/1000), distance)){
-                        Log.d("1. places NAME is in area: ", me);
-                        Log.d("2. places RADIUS: ", Double.toString((locationNames.getRadius(me) / 1000)));
-                        Log.d("3. places DISTANCE: ", Double.toString(distance));
-
-                        currentLocationName = me;
-
-                        sendNotification("ENTERED", "YOU HAVE ENTERED: " + currentLocationName.toUpperCase());
-
-                        checkUnsendMessages(currentLocationName);
-
-                    }
-
-                }
-
+                inArea(location);
+                sendNotification.sendNotification("ENTERED AN AREA", "YOU HAVE ENTERED: " + currentLocationName.toUpperCase());
                 checkUnsendMessages(currentLocationName);
                 Toast.makeText(context , "LOCATION ENTERED: " + currentLocationName, Toast.LENGTH_SHORT).show();
 
@@ -310,10 +293,8 @@ GoogleApiClient.OnConnectionFailedListener,
 
             @Override
             public void onKeyExited(String key) {
-                // Log and toast
-                //to check when it is triggered
                 Toast.makeText(context, "LOCATION EXIT", Toast.LENGTH_SHORT).show();
-                sendNotification("EXITED", "YOU HAVE EXITED: " + currentLocationName.toUpperCase());
+                sendNotification.sendNotification("EXITED", "YOU HAVE EXITED: " + currentLocationName.toUpperCase());
                 isInRadius = false;
                 currentLocationName = "";
 
@@ -321,33 +302,10 @@ GoogleApiClient.OnConnectionFailedListener,
 
             @Override
             public void onKeyMoved(String key, GeoLocation location) {
-
+                inArea(location);
                 Toast.makeText(context ,
                         "DEVICE IS MOVING LOCATION: " + Double.toString(location.latitude) + ", " + Double.toString(location.longitude),
                         Toast.LENGTH_SHORT).show();
-
-                LatLng device = new LatLng(location.latitude, location.longitude);
-
-                for(int i= 0; i < locationNames.getSize(); i++){
-                    String me = locationNames.getPlacesList().get(i).getName();
-                    LatLng checkAgainst = locationNames.getLatLng(locationNames.getPlacesList().get(i).getName());
-                    double distance = Physics.haversine(device, checkAgainst);
-
-                    //assuming the device's radius is 1km
-                    if(Physics.isInArea(0.1, (locationNames.getRadius(me)/1000), distance)){
-                        Log.d("1. places NAME is in area: ", me);
-                        Log.d("2. places RADIUS: ", Double.toString((locationNames.getRadius(me) / 1000)));
-                        Log.d("3. places DISTANCE: ", Double.toString(distance));
-
-                        Toast.makeText(context, "LOCATION HAS MOVED TO" + currentLocationName, Toast.LENGTH_SHORT).show();
-
-                        //radius is only true here when it is in the area
-                        isInRadius = true;
-                        currentLocationName = me;
-                        checkUnsendMessages(currentLocationName);
-
-                    }
-                }
             }
 
             @Override
@@ -361,72 +319,7 @@ GoogleApiClient.OnConnectionFailedListener,
             }
         };
 
-
-
-        if(!serviceRunning){
-            serviceRunning = true;
-        }else{
-            Log.e(TAG , "startService request for an already running Service");
-        }
-
-        if(geoQueriesList !=null){
-            for(int i=0; i < geoQueriesList.size(); i++){
-                geoQueriesList.get(i).removeAllListeners();
-            }
-        }
-
-
-        Log.d("RUNNING: ", "SERVICE IS RUNNING THIS MANY TIMES " + Integer.toString(serviceCount) );
-
        checkUnsendMessages(currentLocationName);
-    }
-
-    //notification showing that service is currently active
-    private Notification createNotification(){
-        Notification.Builder builder = new Notification.Builder(this, "default")
-                .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle("Active Service")
-                .setContentText("Tap to return to map")
-                .setPriority(Notification.PRIORITY_HIGH);
-
-        Intent resultIntent = new Intent(this, MapsActivity.class);
-        Intent t = new Intent();  //for testing purposes
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,t,
-                PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.setContentIntent(pendingIntent);
-
-        return builder.build(); //xoxo gossip girl
-
-    }
-
-    //FCM messages are to be sent as a notification whenreceived under certain conditions
-    //should implement TYPE of notification once geoquery wors properly
-    public void sendNotification(String title, String format) {
-        Notification.Builder builder = new Notification.Builder(this, "default")
-                .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setContentTitle(title)
-                .setContentText(format)
-                .setPriority(Notification.PRIORITY_HIGH);
-
-        NotificationManager mNotificationManager =
-                (NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("default",
-                    "channel",
-                    NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("CLOUD_MESSAGING_NOTIFICATION");
-            mNotificationManager.createNotificationChannel(channel);
-        }
-
-        Intent intent = new Intent(this, MapsActivity.class);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        builder.setContentIntent(contentIntent);
-        Notification notification = builder.build();
-        notification.flags |= Notification.FLAG_AUTO_CANCEL;
-        notification.defaults  |= Notification.DEFAULT_SOUND;
-
-        mNotificationManager.notify(0,notification);
     }
 
     //when messages are not in the radius of the location it is intended to be send to
@@ -435,28 +328,9 @@ GoogleApiClient.OnConnectionFailedListener,
     public void checkUnsendMessages(String current){
         if(unsendMessagesList.size() > 0 ){
             for(int count = 0; count < unsendMessagesList.size(); count++){
-                //for testing purposes
-                //in theory should work, but it doeSNT
-                Log.d("UNSEND MESSAGE SIZE: ", Integer.toString(unsendMessagesList.size()) );
-
-                //for testing purposes
-                Log.d("UNSENT EQUALS: " , Boolean.toString(unsendMessagesList.get(count).getPlace().equals(current)));
-
-                Log.d("UNSENT CURRENT LOCATION: ", current);
-
-                Log.d("UNSENT COUNT: ", Integer.toString(count) );
-
-
-                Log.d("UNSENT TITLE: ", unsendMessagesList.get(count).getTitle());
-                Log.d("UNSENT BODY: ", unsendMessagesList.get(count).getBody());
-                Log.d("UNSENT PLACE: ", unsendMessagesList.get(count).getPlace());
-                Log.d("=========================================: ", "=========================================: ");
-                Log.d("=========================================: ", "=========================================: ");
-                Log.d("=========================================: ", "=========================================: ");
-                Log.d("=========================================: ", "=========================================: ");
 
                 if(isInRadius && unsendMessagesList.get(count).getPlace().equals(current)){
-                    sendNotification(unsendMessagesList.get(count).getTitle(), unsendMessagesList.get(count).getBody());
+                    sendNotification.sendNotification(unsendMessagesList.get(count).getTitle(), unsendMessagesList.get(count).getBody());
                     //send notification to device
                     unsendMessagesList.remove(count);
 
@@ -629,8 +503,6 @@ GoogleApiClient.OnConnectionFailedListener,
                 locationNames.getPlacesList().clear();
                 locationNames.clearMarker();
 
-
-                int c = 0;
                 for (DataSnapshot childDataSnapshot : dataSnapshot.getChildren()) {
 
                     Log.d("DB ", "=====================++========================="); //displays the key for the node
@@ -642,9 +514,8 @@ GoogleApiClient.OnConnectionFailedListener,
                         String lng = childDataSnapshot.child("Lng").getValue().toString();  //error prone here need to check
                         String r = childDataSnapshot.child("Radius").getValue().toString();
 
-                        c++;
                         // Places places = childDataSnapshot.getValue(Places.class);
-                        Log.d("DB NAME", "" + name + " " + c);
+                        Log.d("DB NAME", "" + name );
 
                         LatLng latLng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
                         int radius = Integer.parseInt(r);
@@ -670,6 +541,7 @@ GoogleApiClient.OnConnectionFailedListener,
 
     public void setContext(Context context){
         mContext = context;
+        sendNotification = new SendNotification(mContext);   //cheating tbh
     }
 
     public void deleteFromDB(final String name){
@@ -695,12 +567,29 @@ GoogleApiClient.OnConnectionFailedListener,
 
     }
 
-    public void isDeleted(boolean t){
-        deleting = t;
-    }
+    private void inArea(GeoLocation location){
+        LatLng device = new LatLng(location.latitude, location.longitude);
 
-    public boolean getIsItDeleted(){
-        return deleting;
+        for(int i= 0; i < locationNames.getSize(); i++){
+            String me = locationNames.getPlacesList().get(i).getName();
+            LatLng checkAgainst = locationNames.getLatLng(locationNames.getPlacesList().get(i).getName());
+            double distance = Physics.haversine(device, checkAgainst);
+
+            //assuming the device's radius is 1km
+            if(Physics.isInArea(0.1, (locationNames.getRadius(me)/1000), distance)){
+                Log.d("1. places NAME is in area: ", me);
+                Log.d("2. places RADIUS: ", Double.toString((locationNames.getRadius(me) / 1000)));
+                Log.d("3. places DISTANCE: ", Double.toString(distance));
+
+                Toast.makeText(mContext, "DEVICE IS CURRENTLY IN: " + currentLocationName, Toast.LENGTH_SHORT).show();
+
+                //radius is only true here when it is in the area
+                isInRadius = true;
+                currentLocationName = me;
+                checkUnsendMessages(currentLocationName);
+
+            }
+        }
     }
 
 }
