@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
   }
 
+  //last tryyyyyyaskdasbdksabdas
     public void press(View view){
         editText = (EditText) findViewById(R.id.latlng);
 
