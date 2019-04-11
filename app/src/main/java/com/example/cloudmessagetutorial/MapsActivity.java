@@ -85,6 +85,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     private String defaultparmeter = "";
 
+    private UserInterface ui = new UserInterface();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -241,7 +243,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             serviceBound = false;
 
             Log.d("DISCONNECT", "Service disconnect");
-
         }
     };
 
@@ -258,9 +259,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
             }
             return false;
         }
-
         return true;
-
     }
 
     private void setUpdateLocation() {
@@ -376,10 +375,8 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     }
 
     public void testButton(View view){
-
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
-
     }
 
     public void press(View view){
@@ -397,100 +394,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
     }
 
     private boolean popup2(final String name) {
-
-        //splitting the given latlng into lat and lng
-        split = editText.getText().toString().split(",");
-
-        final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-
-        Context context = this;
-        LinearLayout layout = new LinearLayout(context);
-        layout.setOrientation(LinearLayout.VERTICAL);
-
-        final EditText nameBox = new EditText(context);
-
-        if(name.equals("")) {
-            nameBox.setHint("Name");
-            layout.addView(nameBox);
-        }else{
-          //  nameBox.setEnabled(false);
-            nameBox.setHint(name);
-            layout.addView(nameBox);
-        }
-
-        final EditText latBox = new EditText(context);
-        latBox.setEnabled(false);
-        latBox.setHint("Latitude");
-        layout.addView(latBox);
-
-        final EditText  lngBox = new EditText(context);
-        lngBox.setEnabled(false);
-        lngBox.setHint("Longitude");
-        layout.addView(lngBox);
-
-        final EditText radiusBox = new EditText(context);
-        radiusBox.setHint("Radius");
-        layout.addView(radiusBox);
-
-        final EditText descriptionBox = new EditText(context);
-        descriptionBox.setHint("Description");
-        layout.addView(descriptionBox);
-
-        alertDialogBuilder.setView(layout);
-
-        latBox.setText(split[0]);
-        lngBox.setText(split[1]);
-
-        final LatLng latLng = new LatLng(Double.parseDouble(split[0]), Double.parseDouble(split[1]));
-
-        alertDialogBuilder.setCancelable(true).setPositiveButton("Add Geofence", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                //Toast.makeText(MapsActivity.this, "Added: " +  nameBox.getText().toString(), Toast.LENGTH_LONG).show();
-                 if(TextUtils.isEmpty(nameBox.getText().toString()) ||
-                         TextUtils.isEmpty(descriptionBox.getText().toString()) ||
-                         TextUtils.isEmpty(radiusBox.getText().toString()) ){
-
-                     Toast.makeText(MapsActivity.this, "Please enter all field!", Toast.LENGTH_SHORT).show();
-                 }else{
-                     geoService.addGeofence(nameBox.getText().toString(),
-                             latLng,
-                             Double.parseDouble(radiusBox.getText().toString()),
-                             mMap,
-                             descriptionBox.getText().toString());
-
-                     geoService.addToDB(nameBox.getText().toString(),
-                             latLng,
-                             Double.parseDouble(radiusBox.getText().toString()),
-                             descriptionBox.getText().toString());
-
-                     if(added){
-                         Toast.makeText(MapsActivity.this, "SHOULD DELETE:" + name, Toast.LENGTH_LONG).show();
-                         geoService.deleteFromDB(name);
-                         SystemClock.sleep(1000);   //not sure if necessary
-                         added = false;
-
-                     }
-
-                 }
-            }
-        });
-
-        alertDialogBuilder.setCancelable(true).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-
-        AlertDialog alertDialog = alertDialogBuilder.create();
-
-        alertDialog.show();
-
-        Toast.makeText(MapsActivity.this, "end of function", Toast.LENGTH_SHORT).show();
-
-        return added;
-
+        return ui.inputpop(added,editText,this,name,geoService,mMap);
     }
 
     //get latlng of tapped area
@@ -526,52 +430,22 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(final Marker marker) {
-        editText = (EditText) findViewById(R.id.latlng);
 
         DecimalFormat df = new DecimalFormat("#.#####");
         df.setRoundingMode(RoundingMode.CEILING);
 
+        editText = (EditText) findViewById(R.id.latlng);
         editText.setText(df.format(marker.getPosition().latitude) + ", " +df.format(marker.getPosition().longitude) );
+
+        final String n = geoService.getLocationNames().getPlace(marker.getPosition());
+        double la = marker.getPosition().latitude;
+        double ln = marker.getPosition().longitude;
 
         Toast.makeText(this, "TAPPED " , Toast.LENGTH_SHORT).show();
 
         final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MapsActivity.this);
-        Context context = this;
-        LinearLayout layout = new LinearLayout(MapsActivity.this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        final String n = geoService.getLocationNames().getPlace(marker.getPosition());
-
-
-        final EditText name = new EditText(MapsActivity.this);
-        name.setEnabled(false);
-        layout.addView(name);
-
-        final EditText lat = new EditText(MapsActivity.this);
-        lat.setEnabled(false);
-        layout.addView(lat);
-
-        final EditText lng = new EditText(MapsActivity.this);
-        lng.setEnabled(false);
-        layout.addView(lng);
-
-        final EditText radius = new EditText(MapsActivity.this);
-        radius.setEnabled(false);
-        layout.addView(radius);
-
-        final EditText description = new EditText(MapsActivity.this);
-        description.setEnabled(false);
-        layout.addView(description);
-
-        double la = marker.getPosition().latitude;
-        double ln = marker.getPosition().longitude;
-
-        name.setText("Name: " + n);
-        lat.setText("Latitude: "+ Double.toString(la) );
-        lng.setText("Longitude: "+ Double.toString(ln) );
-        radius.setText("Radius: " + Double.toString(geoService.getLocationNames().getRadius(n)));
-        description.setText("Description: " + geoService.getLocationNames().getDescription(n));
-
-        alertDialogBuilder.setView(layout);
+        LinearLayout linearLayout = ui.pop(this, n, la, ln, geoService.getLocationNames().getRadius(n), geoService.getLocationNames().getDescription(n) );
+        alertDialogBuilder.setView(linearLayout);
 
         alertDialogBuilder.setCancelable(true).setPositiveButton("Edit", new DialogInterface.OnClickListener() {
             @Override
@@ -593,7 +467,6 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
                Toast.makeText(MapsActivity.this, "DELETED: "+ n , Toast.LENGTH_LONG).show();
 
                 geoService.deleteFromDB(n);
-
                 //not sure if needed
                 marker.remove();   //it works but hard remove circle
                 SystemClock.sleep(1000);
