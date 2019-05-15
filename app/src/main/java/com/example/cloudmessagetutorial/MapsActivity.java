@@ -19,13 +19,11 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -35,16 +33,12 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import com.google.firebase.database.DatabaseReference;
-
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 
@@ -85,7 +79,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
     private String defaultparmeter = "";
 
-    private UserInterface ui = new UserInterface();
+    private UserInterface userInterface = new UserInterface();
 
 
     @Override
@@ -121,6 +115,33 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
 
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter("IntentKey"));
+
+
+        LatLng crossfit = new LatLng(4.930940, 114.840726);
+        LatLng house = new LatLng(4.899541, 114.849591);
+        LatLng huahomanggis = new LatLng(4.947292, 114.960772);
+        LatLng giant = new LatLng(4.952149, 114.907406);
+        LatLng pizza = new LatLng(4.901201, 114.901684);
+        LatLng haz = new LatLng(4.917353, 114.911082);
+        LatLng kia = new LatLng(4.981852, 114.953762);
+        LatLng relentless = new LatLng(4.907545, 114.924353);
+        LatLng ubd = new LatLng(4.972740, 114.893977);
+        LatLng airport = new LatLng(4.943832, 114.931770);
+        LatLng mcd = new LatLng(4.965173, 114.951696);
+
+
+        geoService.addGeofence("MCD", mcd,  800, googleMap,"lets eat here");
+        geoService.addGeofence("673 Jerudong", crossfit,70, googleMap, "I gym here");
+        geoService.addGeofence("House", house, 70, googleMap,"my house");
+        geoService.addGeofence("Giant", giant, 300,googleMap,"We are meeting at Jolibee");
+        geoService.addGeofence("Pizza", pizza, 400,googleMap,"Lets eat Pizza");
+        geoService.addGeofence("Haz", haz, 300,googleMap,"My second gym is here");
+        geoService.addGeofence("KIA", kia, 400, googleMap,"Car broom broom");
+        geoService.addGeofence("HuaHo Manggis", huahomanggis, 70, googleMap,"buy BB's watch pls");
+        geoService.addGeofence("Relentless", relentless, 600,  googleMap, "dance dance dannce");
+        geoService.addGeofence("Ubd", ubd, 800, googleMap, "University Brunei Darussalam");
+        geoService.addGeofence("Airport", airport, 800,  googleMap, "Brunei International Airport");
+
 
         geoService.setMap(googleMap);
         geoService.setContext(this);
@@ -383,18 +404,18 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         editText = (EditText) findViewById(R.id.latlng);
 
         if(regex(editText.getText().toString())) {
+            added=false;
             popup2();
         }else
             Toast.makeText(this, "Value entered is not a LatLng, please enter correct LatLng", Toast.LENGTH_LONG).show();
     }
 
-    private boolean popup2(){
+    private void popup2(){
         popup2(defaultparmeter);
-        return added;
     }
 
-    private boolean popup2(final String name) {
-        return ui.inputpop(added,editText,this,name,geoService,mMap);
+    private void popup2(final String name) {
+        userInterface.inputpop(added,editText,this,name,geoService,mMap);
     }
 
     //get latlng of tapped area
@@ -444,7 +465,7 @@ public class MapsActivity extends FragmentActivity implements  OnMapReadyCallbac
         Toast.makeText(this, "TAPPED " , Toast.LENGTH_SHORT).show();
 
         final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(MapsActivity.this);
-        LinearLayout linearLayout = ui.pop(this, n, la, ln, geoService.getLocationNames().getRadius(n), geoService.getLocationNames().getDescription(n) );
+        LinearLayout linearLayout = userInterface.pop(this, n, la, ln, geoService.getLocationNames().getRadius(n), geoService.getLocationNames().getDescription(n) );
         alertDialogBuilder.setView(linearLayout);
 
         alertDialogBuilder.setCancelable(true).setPositiveButton("Edit", new DialogInterface.OnClickListener() {

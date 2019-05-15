@@ -3,14 +3,20 @@ package com.example.cloudmessagetutorial;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 public class UserInterface {
 
@@ -18,7 +24,6 @@ private boolean tmpadd = false;
 
     public LinearLayout pop(Context context, String names, double lats, double lngs, double radiuss, String dess){
 
-        final android.support.v7.app.AlertDialog.Builder alertDialogBuilder = new android.support.v7.app.AlertDialog.Builder(context);
       //  Context context = this;
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -53,13 +58,12 @@ private boolean tmpadd = false;
 
     }
 
-    public boolean inputpop(final boolean added, EditText editText, final Context context, final String name, final GeoService geoService, final GoogleMap mMap){
+    public void inputpop(final boolean added, EditText editText, final Context context, final String name, final GeoService geoService, final GoogleMap mMap){
         //splitting the given latlng into lat and lng
        String[] split = editText.getText().toString().split(",");
 
        tmpadd = added;
         final android.support.v7.app.AlertDialog.Builder alertDialogBuilder = new android.support.v7.app.AlertDialog.Builder(context);
-
 
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -71,7 +75,7 @@ private boolean tmpadd = false;
             layout.addView(nameBox);
         }else{
             //  nameBox.setEnabled(false);
-            nameBox.setHint(name);
+            nameBox.setText(name);
             layout.addView(nameBox);
         }
 
@@ -94,7 +98,6 @@ private boolean tmpadd = false;
         layout.addView(descriptionBox);
 
 
-
         alertDialogBuilder.setView(layout);
 
         latBox.setText(split[0]);
@@ -112,6 +115,36 @@ private boolean tmpadd = false;
 
                     Toast.makeText(context, "Please enter all field!", Toast.LENGTH_SHORT).show();
                 }else{
+
+                   if(name.equals(nameBox.getText().toString()) && tmpadd){
+                        Query query = geoService.getRef().child(name);
+                       Log.d("DB CHECK ", query.getRef().toString());
+
+                       query.addValueEventListener(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                Log.d("DB CHECK ", dataSnapshot.getRef().toString());
+
+                                for(DataSnapshot childDataSnapshot: dataSnapshot.getChildren()) {
+                                    Log.d("DB CHECK ", childDataSnapshot.getRef().toString());
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                Log.e("The read failed: " ,"OOPS");
+
+                            }
+                        });
+                    }else if(tmpadd){
+                        Toast.makeText(context, "SHOULD DELETE:" + name, Toast.LENGTH_LONG).show();
+                        geoService.deleteFromDB(name);
+                        SystemClock.sleep(1000);   //not sure if necessary
+                        tmpadd = false;
+
+                    }
+
+                    SystemClock.sleep(1000);   //not sure if necessary
                     geoService.addGeofence(nameBox.getText().toString(),
                             latLng,
                             Double.parseDouble(radiusBox.getText().toString()),
@@ -123,13 +156,6 @@ private boolean tmpadd = false;
                             Double.parseDouble(radiusBox.getText().toString()),
                             descriptionBox.getText().toString());
 
-                    if(tmpadd){
-                        Toast.makeText(context, "SHOULD DELETE:" + name, Toast.LENGTH_LONG).show();
-                        geoService.deleteFromDB(name);
-                        SystemClock.sleep(1000);   //not sure if necessary
-                        tmpadd = false;
-
-                    }
 
                 }
             }
@@ -145,10 +171,5 @@ private boolean tmpadd = false;
         AlertDialog alertDialog = alertDialogBuilder.create();
 
         alertDialog.show();
-
-        Toast.makeText(context, "end of function", Toast.LENGTH_SHORT).show();
-
-        return tmpadd;
-
     }
 }

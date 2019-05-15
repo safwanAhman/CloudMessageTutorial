@@ -38,6 +38,7 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
@@ -118,6 +119,13 @@ GoogleApiClient.OnConnectionFailedListener,
 
 
     @Override
+    public void onDestroy(){
+        super.onDestroy();
+        Intent broadcastIntent = new Intent(".RestartService");
+        sendBroadcast(broadcastIntent);
+    }
+
+    @Override
     public void onCreate() {
         if (Log.isLoggable(TAG, Log.VERBOSE)) {
             Log.v(TAG, "Creating service");
@@ -174,8 +182,6 @@ GoogleApiClient.OnConnectionFailedListener,
         displayLocation();
 
         if(mLastLocation != location) {
-
-            Log.d("LOCATIONCAHGNED", "LOCATION CHANGED TO" + Double.toString(location.getLatitude()) + ", " + Double.toString(location.getLongitude()));
             Toast.makeText(GeoService.this,
                     "MOVING: " + Double.toString(location.getLatitude()) + ", " + Double.toString(location.getLongitude()),
                     Toast.LENGTH_SHORT).show();
@@ -218,7 +224,7 @@ GoogleApiClient.OnConnectionFailedListener,
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
+        Log.e("ERROR ", "Connecction erro has occurred and failed");
     }
 
     //using start_sticky so it can restart where it left off
@@ -239,8 +245,6 @@ GoogleApiClient.OnConnectionFailedListener,
                     geoQueriesList.get(i).removeAllListeners();
                 }
             }
-
-
         }else{
             Log.e(TAG, "STOP TIMER FOR A TIMER THAT IS NOT RUNNING");
         }
@@ -282,12 +286,9 @@ GoogleApiClient.OnConnectionFailedListener,
         listener = new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
-
                 isInRadius = true;
-                inArea(location);
-                sendNotification.sendNotification("ENTERED AN AREA", "YOU HAVE ENTERED: " + currentLocationName.toUpperCase());
-                checkUnsendMessages(currentLocationName);
-                Toast.makeText(context , "LOCATION ENTERED: " + currentLocationName, Toast.LENGTH_SHORT).show();
+                String s = inArea(location);
+                sendNotification.sendNotification("ENTERED AN AREA", "YOU HAVE ENTERED: " + s.toUpperCase());
 
             }
 
@@ -303,9 +304,7 @@ GoogleApiClient.OnConnectionFailedListener,
             @Override
             public void onKeyMoved(String key, GeoLocation location) {
                 inArea(location);
-                Toast.makeText(context ,
-                        "DEVICE IS MOVING LOCATION: " + Double.toString(location.latitude) + ", " + Double.toString(location.longitude),
-                        Toast.LENGTH_SHORT).show();
+              //  Toast.makeText(context , "DEVICE IS MOVING LOCATION: " + Double.toString(location.latitude) + ", " + Double.toString(location.longitude), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -462,7 +461,7 @@ GoogleApiClient.OnConnectionFailedListener,
 
         }
 
-      // addToDB(place,  location,  radius,  text);
+     //  addToDB(place,  location,  radius,  text);
     }
 
     //add an error catch pls or else later payah
@@ -473,12 +472,50 @@ GoogleApiClient.OnConnectionFailedListener,
         final DatabaseReference lng =  name.child("Lng");
         final DatabaseReference r =  name.child("Radius");
         final DatabaseReference des = name.child("Description");
-
-        lat.setValue(location.latitude);
-        lng.setValue(location.longitude);
-        r.setValue(radius);
-        des.setValue(text);
-
+        lat.setValue(location.latitude).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Log.d("DB ADDED ","val set");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("DB ERROE ", "val not added");
+            }
+        });
+        lng.setValue(location.longitude).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Log.d("DB ADDED ","val set");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("DB ERROE ", "val not added");
+            }
+        });
+        r.setValue(radius).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Log.d("DB ADDED ","val set");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("DB ERROE ", "val not added");
+            }
+        });
+        des.setValue(text).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                Log.d("DB ADDED ","val set");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("DB ERROE ", "val not added");
+            }
+        });
         SystemClock.sleep(700);   //not sure if necessary
 
 
@@ -567,29 +604,30 @@ GoogleApiClient.OnConnectionFailedListener,
 
     }
 
-    private void inArea(GeoLocation location){
+    private String inArea(GeoLocation location){
+
+        //something about this function makes it show Soartech Main Office during the introduction.
         LatLng device = new LatLng(location.latitude, location.longitude);
 
         for(int i= 0; i < locationNames.getSize(); i++){
             String me = locationNames.getPlacesList().get(i).getName();
-            LatLng checkAgainst = locationNames.getLatLng(locationNames.getPlacesList().get(i).getName());
+            LatLng checkAgainst = locationNames.getLatLng(me);
             double distance = Physics.haversine(device, checkAgainst);
 
             //assuming the device's radius is 1km
             if(Physics.isInArea(0.1, (locationNames.getRadius(me)/1000), distance)){
-                Log.d("1. places NAME is in area: ", me);
-                Log.d("2. places RADIUS: ", Double.toString((locationNames.getRadius(me) / 1000)));
-                Log.d("3. places DISTANCE: ", Double.toString(distance));
-
-                Toast.makeText(mContext, "DEVICE IS CURRENTLY IN: " + currentLocationName, Toast.LENGTH_SHORT).show();
-
                 //radius is only true here when it is in the area
                 isInRadius = true;
                 currentLocationName = me;
                 checkUnsendMessages(currentLocationName);
-
+                return me;
             }
         }
+        return "";
+    }
+
+    public DatabaseReference getRef(){
+        return ok;
     }
 
 }

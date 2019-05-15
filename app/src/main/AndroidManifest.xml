@@ -17,10 +17,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <receiver
-            android:name=".GeoReceiver"
+            android:name="com.example.cloudmessagetutorial.ServiceReciever"
             android:enabled="true"
             android:exported="true"
-            android:label="RestrartServiceWhenStopped"></receiver>
+            android:label="RestartServiceWhenStopped">
+            <intent-filter>
+                <action android:name=".RestartService"/>
+            </intent-filter>
+        </receiver>
         <service
             android:name=".GeoService"
             android:enabled="true"
